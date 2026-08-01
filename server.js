@@ -51,7 +51,6 @@ async function createTables() {
                 vibe_selected TEXT,
                 place_selected TEXT,
                 date_confirmed TEXT,
-                viewer_name TEXT,
                 viewed_at TIMESTAMP,
                 yes_clicked_at TIMESTAMP,
                 confirmed_at TIMESTAMP,
@@ -60,6 +59,16 @@ async function createTables() {
             )
         `);
 
+        // ===== ADD viewer_name COLUMN =====
+        try {
+            await pool.query(`
+                ALTER TABLE date_plans ADD COLUMN IF NOT EXISTS viewer_name TEXT
+            `);
+            console.log('✅ viewer_name column added to date_plans');
+        } catch (err) {
+            console.log('ℹ️ viewer_name column check:', err.message);
+        }
+
         // Tracking log
         await pool.query(`
             CREATE TABLE IF NOT EXISTS tracking_log (
@@ -67,12 +76,21 @@ async function createTables() {
                 plan_key TEXT,
                 step TEXT,
                 data TEXT,
-                viewer_name TEXT,
                 user_agent TEXT,
                 ip TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        // ===== ADD viewer_name to tracking_log =====
+        try {
+            await pool.query(`
+                ALTER TABLE tracking_log ADD COLUMN IF NOT EXISTS viewer_name TEXT
+            `);
+            console.log('✅ viewer_name column added to tracking_log');
+        } catch (err) {
+            console.log('ℹ️ viewer_name column check in tracking_log:', err.message);
+        }
 
         // Love quotes table
         await pool.query(`
@@ -453,6 +471,7 @@ app.get('/api/customer/status/:planKey', async (req, res) => {
                     '⏳ Waiting for her to open'
         });
     } catch (err) {
+        console.error('❌ Customer status error:', err);
         res.status(500).json({ error: err.message });
     }
 });
