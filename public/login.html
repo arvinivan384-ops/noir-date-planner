@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Login - NOIR</title>
+    <style>
+        body {
+            background: radial-gradient(circle at 30% 20%, #1f1129, #0b0710);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+        }
+        .login-box {
+            background: rgba(20,14,27,0.9);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid rgba(238,207,143,0.2);
+            max-width: 400px;
+            width: 100%;
+        }
+        .login-box h1 {
+            color: #eecf8f;
+            font-family: 'Playfair Display', serif;
+            text-align: center;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            font-size: 14px;
+        }
+        .login-box button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #eecf8f, #d9b25f);
+            color: #1a0f18;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .error {
+            color: #e8829f;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h1>✦ NOIR ADMIN</h1>
+        <p style="color:#a09cb0;text-align:center;">Enter your credentials</p>
+        <input type="email" id="loginEmail" placeholder="admin@noir.com" value="admin@noir.com">
+        <input type="password" id="loginPassword" placeholder="Password" value="admin123">
+        <button onclick="login()">Login →</button>
+        <div id="loginError" class="error"></div>
+    </div>
+
+    <script>
+        function login() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (email === 'admin@noir.com' && password === 'admin123') {
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                window.location.href = '/admin';
+            } else {
+                document.getElementById('loginError').textContent = '❌ Invalid credentials';
+            }
+        }
+        
+        // Enter key to login
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') login();
+        });
+    </script>
+</body>
+</html>
