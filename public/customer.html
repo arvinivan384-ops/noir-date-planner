@@ -134,13 +134,18 @@
     async function fetchStatus(planKey) {
         try {
             const response = await fetch(`/api/customer/status/${planKey}`);
-            const data = await response.json();
-
-            if (response.ok) {
-                displayStatus(data);
-            } else {
-                document.getElementById('loading').innerHTML = '❌ Plan not found. Please check your link.';
+            
+            if (!response.ok) {
+                if (response.status === 404) {
+                    document.getElementById('loading').innerHTML = '❌ Plan not found. Please check your link.';
+                } else {
+                    document.getElementById('loading').innerHTML = '❌ Error loading status. Please try again.';
+                }
+                return;
             }
+            
+            const data = await response.json();
+            displayStatus(data);
         } catch (error) {
             document.getElementById('loading').innerHTML = '❌ Error loading status. Please try again.';
         }
