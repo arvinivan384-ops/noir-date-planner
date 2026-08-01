@@ -358,6 +358,81 @@
         border-radius: 28px;
       }
 
+      /* ---------- NAME ENTRY SECTION ---------- */
+      .name-entry {
+        margin-bottom: 20px;
+        background: rgba(20, 14, 27, 0.6);
+        border-radius: 20px;
+        padding: 24px 20px 20px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        text-align: center;
+      }
+      .name-entry .greeting {
+        font-family: 'Playfair Display', serif;
+        font-size: 28px;
+        font-weight: 600;
+        color: #eecf8f;
+        margin-bottom: 4px;
+        letter-spacing: 0.02em;
+      }
+      .name-entry .sub-greeting {
+        font-size: 13px;
+        color: #a09cb0;
+        margin-bottom: 16px;
+        font-style: italic;
+      }
+      .name-entry .name-input-wrapper {
+        display: flex;
+        gap: 10px;
+        max-width: 400px;
+        margin: 0 auto;
+      }
+      .name-entry .name-input-wrapper input {
+        flex: 1;
+        padding: 12px 18px;
+        border-radius: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+        color: #fff;
+        font-size: 16px;
+        font-family: 'Playfair Display', serif;
+        outline: none;
+        transition: all 0.3s ease;
+        text-align: center;
+        letter-spacing: 0.02em;
+      }
+      .name-entry .name-input-wrapper input:focus {
+        border-color: rgba(238, 207, 143, 0.3);
+        background: rgba(255, 255, 255, 0.06);
+        box-shadow: 0 0 30px rgba(238, 207, 143, 0.03);
+      }
+      .name-entry .name-input-wrapper input::placeholder {
+        color: #6a5a6a;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        letter-spacing: 0.02em;
+      }
+      .name-entry .name-input-wrapper button {
+        padding: 12px 28px;
+        border-radius: 40px;
+        border: none;
+        background: linear-gradient(135deg, #eecf8f, #d9b25f);
+        color: #1a0f18;
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+      }
+      .name-entry .name-input-wrapper button:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 20px rgba(217, 178, 95, 0.3);
+      }
+      .name-entry .name-input-wrapper button:active {
+        transform: scale(0.98);
+      }
+
       /* ---------- STATUS DASHBOARD ---------- */
       .status-dashboard {
         background: rgba(20, 14, 27, 0.8);
@@ -449,6 +524,11 @@
         color: #fcf5f0;
       }
       h1 em { font-style: italic; color: #e8829f; font-weight: 500; }
+      h1 .name-highlight {
+        color: #eecf8f;
+        font-style: italic;
+        font-weight: 700;
+      }
 
       .sub {
         font-size: 14px;
@@ -469,6 +549,18 @@
         opacity: 0.7;
         margin-bottom: 8px;
         margin-top: 6px;
+      }
+
+      /* HIDE MAIN CONTENT UNTIL NAME IS ENTERED */
+      .main-content {
+        display: none;
+      }
+      .main-content.show {
+        display: block;
+        animation: fadeUp 0.8s ease forwards;
+      }
+      .name-entry.hidden {
+        display: none;
       }
 
       .date-picker {
@@ -809,6 +901,13 @@
         .dashboard-grid { grid-template-columns: 1fr; }
         .confirm-action.maps { grid-column: span 1; }
         .confirm-action.back { grid-column: span 1; }
+        .name-entry .name-input-wrapper {
+          flex-direction: column;
+          max-width: 100%;
+        }
+        .name-entry .name-input-wrapper button {
+          width: 100%;
+        }
       }
     </style>
 </head>
@@ -881,100 +980,114 @@
         <div class="eyebrow">◈ a little invitation · dar <span>// just for you</span></div>
 
         <div class="form-view" id="formView">
-          <h1>Can we go for a <em>date?</em></h1>
-          <p class="sub">no pressure — just a small hope for a lovely moment together</p>
-
-          <div class="status-dashboard" id="statusDashboard">
-            <div class="status-header">
-              <span class="status-title">your date plan</span>
-              <span class="status-badge not-viewed" id="viewStatusBadge">in progress</span>
-            </div>
-            <div class="status-grid">
-              <div class="status-item">
-                <div class="label">your answer</div>
-                <div class="value"><span id="pageViewed" class="pending">not chosen</span></div>
-              </div>
-              <div class="status-item">
-                <div class="label">date & time</div>
-                <div class="value"><span id="yesStatus" class="pending">not set</span></div>
-              </div>
-              <div class="status-item">
-                <div class="label">vibe</div>
-                <div class="value"><span id="vibeStatus" class="pending">not chosen</span></div>
-              </div>
+          
+          <!-- ===== NAME ENTRY SECTION ===== -->
+          <div class="name-entry" id="nameEntry">
+            <div class="greeting">✨ What's your name?</div>
+            <div class="sub-greeting">a little question before the question</div>
+            <div class="name-input-wrapper">
+              <input type="text" id="viewerName" placeholder="Type your name..." autocomplete="off" />
+              <button id="nameSubmitBtn">continue →</button>
             </div>
           </div>
 
-          <div class="truth-section" id="truthSection">
-            <p>if it feels right, would you say yes?</p>
-            <div class="truth-buttons" id="truthButtons">
-              <button class="truth-btn yes" id="yesBtn">yes</button>
-              <button class="truth-btn no" id="noBtn">no</button>
+          <!-- ===== MAIN CONTENT (hidden until name entered) ===== -->
+          <div class="main-content" id="mainContent">
+            <h1 id="personalizedTitle">Can we go for a <em>date?</em></h1>
+            <p class="sub">no pressure — just a small hope for a lovely moment together</p>
+
+            <div class="status-dashboard" id="statusDashboard">
+              <div class="status-header">
+                <span class="status-title">your date plan</span>
+                <span class="status-badge not-viewed" id="viewStatusBadge">in progress</span>
+              </div>
+              <div class="status-grid">
+                <div class="status-item">
+                  <div class="label">your answer</div>
+                  <div class="value"><span id="pageViewed" class="pending">not chosen</span></div>
+                </div>
+                <div class="status-item">
+                  <div class="label">date & time</div>
+                  <div class="value"><span id="yesStatus" class="pending">not set</span></div>
+                </div>
+                <div class="status-item">
+                  <div class="label">vibe</div>
+                  <div class="value"><span id="vibeStatus" class="pending">not chosen</span></div>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div class="section-label">// pick a date</div>
-          <div class="date-picker" id="datePicker">
-            <label>📅</label>
-            <select id="daySelect"></select>
-            <select id="monthSelect">
-              <option value="0">January</option><option value="1">February</option>
-              <option value="2">March</option><option value="3">April</option>
-              <option value="4">May</option><option value="5">June</option>
-              <option value="6">July</option><option value="7">August</option>
-              <option value="8">September</option><option value="9">October</option>
-              <option value="10">November</option><option value="11">December</option>
-            </select>
-            <select id="yearSelect">
-              <option value="2025">2025</option>
-              <option value="2026">2026</option>
-              <option value="2027">2027</option>
-              <option value="2028">2028</option>
-            </select>
-          </div>
+            <div class="truth-section" id="truthSection">
+              <p>if it feels right, would you say yes?</p>
+              <div class="truth-buttons" id="truthButtons">
+                <button class="truth-btn yes" id="yesBtn">yes</button>
+                <button class="truth-btn no" id="noBtn">no</button>
+              </div>
+            </div>
 
-          <div class="time-picker">
-            <label>⏱️ time</label>
-            <select id="hourSelect">
-              <option value="10">10</option><option value="11">11</option><option value="12">12</option>
-              <option value="13">13</option><option value="14">14</option><option value="15">15</option>
-              <option value="16">16</option><option value="17">17</option><option value="18">18</option>
-              <option value="19">19</option><option value="20">20</option><option value="21">21</option>
-              <option value="22">22</option>
-            </select>
-            <span>:</span>
-            <select id="minuteSelect">
-              <option value="00">00</option><option value="15">15</option><option value="30">30</option><option value="45">45</option>
-            </select>
-          </div>
-
-          <div class="section-label">// pick a vibe</div>
-          <div class="vibe-row" id="vibes">
-            <div class="vibe" data-vibe="dinner">🍝 Dinner</div>
-            <div class="vibe" data-vibe="coffee">☕ Coffee</div>
-            <div class="vibe" data-vibe="walk">🌇 Walk + sunset</div>
-            <div class="vibe" data-vibe="beach">🌊 Beach</div>
-            <div class="vibe" data-vibe="icecream">🍦 Ice cream</div>
-            <div class="vibe" data-vibe="library">📚 Library</div>
-            <div class="vibe" data-vibe="cinema">🎬 Cinema</div>
-            <div class="vibe" data-vibe="home">🏠 At home</div>
-          </div>
-
-          <div class="place-selector" id="placeSelector">
-            <div class="place-row">
-              <span style="opacity:0.7;" id="placeLabel">📍 choose spot</span>
-              <select id="placeSelect">
-                <option value="">— select a vibe first —</option>
+            <div class="section-label">// pick a date</div>
+            <div class="date-picker" id="datePicker">
+              <label>📅</label>
+              <select id="daySelect"></select>
+              <select id="monthSelect">
+                <option value="0">January</option><option value="1">February</option>
+                <option value="2">March</option><option value="3">April</option>
+                <option value="4">May</option><option value="5">June</option>
+                <option value="6">July</option><option value="7">August</option>
+                <option value="8">September</option><option value="9">October</option>
+                <option value="10">November</option><option value="11">December</option>
+              </select>
+              <select id="yearSelect">
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
               </select>
             </div>
-            <div class="place-row custom-place-input">
-              <input type="text" id="customPlaceInput" placeholder="or type any place..." />
-              <button id="customPlaceBtn">➕ add</button>
-            </div>
-          </div>
 
-          <button class="cta" id="ctaBtn" disabled>confirm our little plan</button>
-          <div class="hint" id="hintText">say yes + pick a vibe + choose a place</div>
+            <div class="time-picker">
+              <label>⏱️ time</label>
+              <select id="hourSelect">
+                <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+                <option value="13">13</option><option value="14">14</option><option value="15">15</option>
+                <option value="16">16</option><option value="17">17</option><option value="18">18</option>
+                <option value="19">19</option><option value="20">20</option><option value="21">21</option>
+                <option value="22">22</option>
+              </select>
+              <span>:</span>
+              <select id="minuteSelect">
+                <option value="00">00</option><option value="15">15</option><option value="30">30</option><option value="45">45</option>
+              </select>
+            </div>
+
+            <div class="section-label">// pick a vibe</div>
+            <div class="vibe-row" id="vibes">
+              <div class="vibe" data-vibe="dinner">🍝 Dinner</div>
+              <div class="vibe" data-vibe="coffee">☕ Coffee</div>
+              <div class="vibe" data-vibe="walk">🌇 Walk + sunset</div>
+              <div class="vibe" data-vibe="beach">🌊 Beach</div>
+              <div class="vibe" data-vibe="icecream">🍦 Ice cream</div>
+              <div class="vibe" data-vibe="library">📚 Library</div>
+              <div class="vibe" data-vibe="cinema">🎬 Cinema</div>
+              <div class="vibe" data-vibe="home">🏠 At home</div>
+            </div>
+
+            <div class="place-selector" id="placeSelector">
+              <div class="place-row">
+                <span style="opacity:0.7;" id="placeLabel">📍 choose spot</span>
+                <select id="placeSelect">
+                  <option value="">— select a vibe first —</option>
+                </select>
+              </div>
+              <div class="place-row custom-place-input">
+                <input type="text" id="customPlaceInput" placeholder="or type any place..." />
+                <button id="customPlaceBtn">➕ add</button>
+              </div>
+            </div>
+
+            <button class="cta" id="ctaBtn" disabled>confirm our little plan</button>
+            <div class="hint" id="hintText">say yes + pick a vibe + choose a place</div>
+          </div>
         </div>
 
         <div class="confirm" id="confirmView">
@@ -1034,6 +1147,8 @@ let trackingData = {
     lastUpdate: null
 };
 
+let viewerName = '';
+
 // ============================================================
 //  SECRET DASHBOARD
 // ============================================================
@@ -1087,16 +1202,67 @@ document.getElementById('refreshBtn')?.addEventListener('click', () => {
 });
 
 // ============================================================
+//  NAME ENTRY LOGIC
+// ============================================================
+function enterName() {
+    const input = document.getElementById('viewerName');
+    const name = input.value.trim();
+    
+    if (!name) {
+        input.style.borderColor = '#e8829f';
+        input.style.boxShadow = '0 0 20px rgba(232, 130, 159, 0.1)';
+        setTimeout(() => {
+            input.style.borderColor = 'rgba(255,255,255,0.08)';
+            input.style.boxShadow = 'none';
+        }, 1500);
+        return;
+    }
+    
+    viewerName = name;
+    
+    // Hide name entry, show main content
+    document.getElementById('nameEntry').classList.add('hidden');
+    document.getElementById('mainContent').classList.add('show');
+    
+    // Personalize the title
+    const title = document.getElementById('personalizedTitle');
+    title.innerHTML = `${name}, can we go for a <em>date?</em>`;
+    
+    // Track that name was entered
+    trackStep('name_entered', { viewerName: name });
+}
+
+// Name input enter key
+document.getElementById('viewerName').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        enterName();
+    }
+});
+
+// Name submit button
+document.getElementById('nameSubmitBtn').addEventListener('click', enterName);
+
+// ============================================================
 //  TRACKING - Sends to your backend
 // ============================================================
 
 async function trackStep(step, data = {}) {
+    // Add viewer name to all tracking data
+    if (viewerName) {
+        data.viewerName = viewerName;
+    }
+
     // Update local tracking data
     if (step === 'page_viewed') trackingData.pageViewed = true;
-    if (step === 'yes_clicked') trackingData.yesClicked = true;
+    if (step === 'yes_clicked') {
+        trackingData.yesClicked = true;
+    }
     if (step === 'vibe_selected') trackingData.vibeSelected = data.vibe;
     if (step === 'place_selected') trackingData.placeSelected = data.place;
-    if (step === 'date_confirmed') trackingData.dateConfirmed = data.details;
+    if (step === 'date_confirmed') {
+        trackingData.dateConfirmed = data.details;
+    }
     trackingData.lastUpdate = new Date().toISOString();
 
     updateSecretDashboard();
@@ -1300,11 +1466,11 @@ function updateProgress(eventName, label = '') {
 
     switch(eventName) {
         case 'yes_clicked':
-            pageViewed.innerHTML = 'yes';
-            pageViewed.className = 'done';
+            pageViewed.innerHTML = 'yes 💛';
+            pageViewed.className = 'yes';
             yesStatus.innerHTML = 'choose a time';
             yesStatus.className = 'pending';
-            viewBadge.textContent = 'nice choice';
+            viewBadge.textContent = 'nice choice ✨';
             viewBadge.className = 'status-badge yes';
             break;
 
@@ -1535,7 +1701,11 @@ yesBtn.addEventListener('click', () => {
     yesSelected = true;
     celebrateYes();
     
-    trackStep('yes_clicked', { timestamp: new Date().toISOString() });
+    trackStep('yes_clicked', { 
+        timestamp: new Date().toISOString(),
+        viewerName: viewerName
+    });
+    
     updateProgress('yes_clicked');
     yesBtn.style.background = '#eecf8f';
     yesBtn.style.boxShadow = '0 0 0 2px #d9b25f, 0 6px 20px #d9b25f66';
@@ -1618,7 +1788,8 @@ ctaBtn.addEventListener('click', async () => {
         time: time,
         vibe: chosenVibeLabel || chosenVibe,
         place: chosenPlace,
-        details: details
+        details: details,
+        viewerName: viewerName
     });
     
     document.getElementById('formView').classList.add('hide');
