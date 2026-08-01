@@ -983,20 +983,17 @@
           <p>A little yes can become a beautiful memory.</p>
           <div class="receipt" id="receipt"></div>
           
-          <!-- ===== GOOGLE MAPS & SHARE ACTIONS ===== -->
           <div class="confirm-actions">
             <button class="confirm-action" id="shareBtn" type="button">📤 share plan</button>
             <button class="confirm-action" id="calendarBtn" type="button">📅 calendar</button>
           </div>
           
-          <!-- ===== GOOGLE MAPS (Full width) ===== -->
           <div style="margin-top: 14px; display: grid; grid-template-columns: 1fr; gap: 10px;">
             <button class="confirm-action maps" id="googleMapsBtn" type="button">
               🗺️ Show me the exact location on Google Maps
             </button>
           </div>
           
-          <!-- ===== GO BACK BUTTON ===== -->
           <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr; gap: 10px;">
             <button class="confirm-action back" id="goBackBtn" type="button">
               ↩️ Go Back · Change Plan
@@ -1008,7 +1005,6 @@
           </div>
         </div>
 
-        <!-- ===== TRADEMARK FOOTER ===== -->
         <div class="trademark-footer">
           <span class="tm">© 2026 NOIR</span>
           <span class="heart"> ♥ </span>
@@ -1027,33 +1023,8 @@
 
 <script>
 // ============================================================
-//  CONFIGURATION - REAL-TIME TRACKING WITH FORMSPREE
+//  TRACKING DATA
 // ============================================================
-
-// Check if the URL has ?sender=mido parameter
-const senderParam = new URLSearchParams(window.location.search).get('sender');
-const RESPONSE_ENDPOINTS = senderParam === 'mido'
-    ? [
-        'https://formspree.io/f/mpqveqor', // your email
-        'https://formspree.io/f/xqeroykk', // mido's email
-      ]
-    : [
-        'https://formspree.io/f/mpqveqor', // your email (default - only you)
-      ];
-
-const CONFIG = {
-    RESPONSE_ENDPOINTS: RESPONSE_ENDPOINTS,
-    TRACKING_ENDPOINT: 'https://formspree.io/f/mpqveqor',
-    DASHBOARD_SECRET: 'secret'
-};
-
-console.log('📊 Active response endpoints:', CONFIG.RESPONSE_ENDPOINTS);
-console.log('📡 Tracking endpoint:', CONFIG.TRACKING_ENDPOINT);
-
-// ============================================================
-//  REAL-TIME TRACKING ENGINE
-// ============================================================
-
 let trackingData = {
     pageViewed: false,
     yesClicked: false,
@@ -1062,66 +1033,6 @@ let trackingData = {
     dateConfirmed: null,
     lastUpdate: null
 };
-
-async function trackStep(step, data = {}) {
-    const timestamp = new Date().toISOString();
-    const payload = {
-        step: step,
-        data: data,
-        timestamp: timestamp,
-        userAgent: navigator.userAgent,
-        referrer: document.referrer || 'direct'
-    };
-
-    if (step === 'page_viewed') trackingData.pageViewed = true;
-    if (step === 'yes_clicked') trackingData.yesClicked = true;
-    if (step === 'vibe_selected') trackingData.vibeSelected = data.vibe;
-    if (step === 'place_selected') trackingData.placeSelected = data.place;
-    if (step === 'date_confirmed') trackingData.dateConfirmed = data.details;
-    trackingData.lastUpdate = timestamp;
-
-    updateSecretDashboard();
-
-    try {
-        await fetch(CONFIG.TRACKING_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-    } catch (error) {
-        console.warn('⚠️ Tracking error:', error);
-    }
-
-    if (step === 'date_confirmed') {
-        sendFinalResponse(data);
-    }
-}
-
-async function sendFinalResponse(data) {
-    const activeEndpoints = CONFIG.RESPONSE_ENDPOINTS.filter(url => url && url.includes('formspree.io/f/'));
-    if (activeEndpoints.length === 0) return;
-
-    const payload = {
-        response: 'yes',
-        date: data.date,
-        time: data.time,
-        vibe: data.vibe,
-        place: data.place,
-        confirmed_at: new Date().toISOString()
-    };
-
-    for (const endpoint of activeEndpoints) {
-        try {
-            await fetch(endpoint, {
-                method: 'POST',
-                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-        } catch (error) {
-            console.warn('⚠️ Failed to send to:', endpoint);
-        }
-    }
-}
 
 // ============================================================
 //  SECRET DASHBOARD
@@ -1134,29 +1045,36 @@ function updateSecretDashboard() {
     const dashConfirm = document.getElementById('dashConfirm');
     const dashTimestamp = document.getElementById('dashTimestamp');
 
-    dashPage.textContent = trackingData.pageViewed ? '✅ viewed' : '⏳ pending';
-    dashPage.className = trackingData.pageViewed ? 'done' : 'pending';
-
-    dashYes.textContent = trackingData.yesClicked ? '💛 YES!' : '⏳ waiting';
-    dashYes.className = trackingData.yesClicked ? 'yes' : 'pending';
-
-    dashVibe.textContent = trackingData.vibeSelected ? `🎯 ${trackingData.vibeSelected}` : '⏳ waiting';
-    dashVibe.className = trackingData.vibeSelected ? 'done' : 'pending';
-
-    dashPlace.textContent = trackingData.placeSelected ? `📍 ${trackingData.placeSelected}` : '⏳ waiting';
-    dashPlace.className = trackingData.placeSelected ? 'done' : 'pending';
-
-    dashConfirm.textContent = trackingData.dateConfirmed ? `✅ ${trackingData.dateConfirmed}` : '⏳ waiting';
-    dashConfirm.className = trackingData.dateConfirmed ? 'done' : 'pending';
-
-    dashTimestamp.textContent = trackingData.lastUpdate 
-        ? `Last update: ${new Date(trackingData.lastUpdate).toLocaleString()}`
-        : 'Last update: —';
+    if (dashPage) {
+        dashPage.textContent = trackingData.pageViewed ? '✅ viewed' : '⏳ pending';
+        dashPage.className = trackingData.pageViewed ? 'done' : 'pending';
+    }
+    if (dashYes) {
+        dashYes.textContent = trackingData.yesClicked ? '💛 YES!' : '⏳ waiting';
+        dashYes.className = trackingData.yesClicked ? 'yes' : 'pending';
+    }
+    if (dashVibe) {
+        dashVibe.textContent = trackingData.vibeSelected ? `🎯 ${trackingData.vibeSelected}` : '⏳ waiting';
+        dashVibe.className = trackingData.vibeSelected ? 'done' : 'pending';
+    }
+    if (dashPlace) {
+        dashPlace.textContent = trackingData.placeSelected ? `📍 ${trackingData.placeSelected}` : '⏳ waiting';
+        dashPlace.className = trackingData.placeSelected ? 'done' : 'pending';
+    }
+    if (dashConfirm) {
+        dashConfirm.textContent = trackingData.dateConfirmed ? `✅ ${trackingData.dateConfirmed}` : '⏳ waiting';
+        dashConfirm.className = trackingData.dateConfirmed ? 'done' : 'pending';
+    }
+    if (dashTimestamp) {
+        dashTimestamp.textContent = trackingData.lastUpdate 
+            ? `Last update: ${new Date(trackingData.lastUpdate).toLocaleString()}`
+            : 'Last update: —';
+    }
 }
 
 function showDashboard() {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('dashboard') === CONFIG.DASHBOARD_SECRET) {
+    if (params.get('dashboard') === 'secret') {
         document.getElementById('secretDashboard').classList.add('show');
         return true;
     }
@@ -1167,6 +1085,39 @@ document.getElementById('refreshBtn')?.addEventListener('click', () => {
     updateSecretDashboard();
     document.getElementById('dashTimestamp').textContent += ' (refreshed)';
 });
+
+// ============================================================
+//  TRACKING - Sends to your backend
+// ============================================================
+
+async function trackStep(step, data = {}) {
+    // Update local tracking data
+    if (step === 'page_viewed') trackingData.pageViewed = true;
+    if (step === 'yes_clicked') trackingData.yesClicked = true;
+    if (step === 'vibe_selected') trackingData.vibeSelected = data.vibe;
+    if (step === 'place_selected') trackingData.placeSelected = data.place;
+    if (step === 'date_confirmed') trackingData.dateConfirmed = data.details;
+    trackingData.lastUpdate = new Date().toISOString();
+
+    updateSecretDashboard();
+
+    // Send to your backend
+    try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const planKey = urlParams.get('plan') || 'default';
+        
+        const response = await fetch(`/api/track/${planKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ step, data })
+        });
+        if (response.ok) {
+            console.log('✅ Tracked:', step, data);
+        }
+    } catch (error) {
+        console.warn('⚠️ Tracking error:', error);
+    }
+}
 
 // ============================================================
 //  DOUCEMENT MUSIC (65% volume)
@@ -1247,19 +1198,15 @@ function getLocation() {
 document.getElementById('googleMapsBtn')?.addEventListener('click', async () => {
     let place = chosenPlace || 'Dar es Salaam';
     
-    // If "Home" vibe is selected, try to get user's location
     if (chosenVibe === 'home') {
         const location = await getLocation();
         if (location) {
-            // Open Google Maps with directions from user's location to the recipient's address
-            // Using the recipient's address (you can set this)
-            const recipientAddress = 'Dar es Salaam, Tanzania'; // Change this to actual address
+            const recipientAddress = 'Dar es Salaam, Tanzania';
             const mapsUrl = `https://www.google.com/maps/dir/${location.lat},${location.lng}/${encodeURIComponent(recipientAddress)}`;
             window.open(mapsUrl, '_blank');
             trackStep('google_maps_directions', { from: 'user_location', to: recipientAddress });
             return;
         } else {
-            // Fallback if location not available
             const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(place)}`;
             window.open(mapsUrl, '_blank');
             trackStep('google_maps_search', { place: place });
@@ -1267,7 +1214,6 @@ document.getElementById('googleMapsBtn')?.addEventListener('click', async () => 
         }
     }
     
-    // For non-home vibes, just search the place
     const encodedPlace = encodeURIComponent(place);
     const mapsUrl = `https://www.google.com/maps/search/${encodedPlace}`;
     window.open(mapsUrl, '_blank');
@@ -1555,7 +1501,6 @@ placeSelect.addEventListener('change', () => {
         
         trackStep('place_selected', { place: selected.value });
         
-        // If "home" vibe, don't open Google Maps automatically
         if (chosenPlaceUrl && chosenPlaceUrl !== 'home') {
             window.open(chosenPlaceUrl, '_blank');
         }
