@@ -447,6 +447,38 @@ app.patch('/api/admin/update-plan/:planKey', async (req, res) => {
 });
 
 // ============================================================
+//  ADMIN - DELETE PLAN (NEW - FIXED)
+// ============================================================
+app.delete('/api/admin/delete-plan/:planKey', async (req, res) => {
+    const adminKey = req.headers['x-admin-key'];
+    if (adminKey !== 'NOIR_ADMIN_2026') {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const planKey = req.params.planKey;
+
+    try {
+        // First delete tracking logs (foreign key constraint)
+        await pool.query('DELETE FROM tracking_log WHERE plan_key = $1', [planKey]);
+        
+        // Then delete the plan
+        const result = await pool.query('DELETE FROM date_plans WHERE plan_key = $1 RETURNING *', [planKey]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Plan not found' });
+        }
+        
+        res.json({ 
+            success: true, 
+            message: `Deleted plan: ${planKey}`
+        });
+    } catch (err) {
+        console.error('❌ Delete error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================================
 //  TRACKING - FIXED: viewer_name becomes recipient_name on name_entered
 // ============================================================
 app.post('/api/track/:planKey', async (req, res) => {
