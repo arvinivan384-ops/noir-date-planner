@@ -943,7 +943,7 @@
   <!-- ===== SECRET DASHBOARD ===== -->
   <div class="secret-dashboard" id="secretDashboard">
     <h2>
-      📊 LIVE TRACKING · RADHIA
+      📊 LIVE TRACKING · YOUR DATE
       <button class="dashboard-refresh" id="refreshBtn">↻ refresh</button>
     </h2>
     <div class="dashboard-grid">
@@ -1015,7 +1015,7 @@
             </div>
           </div>
 
-          <!-- ===== MAIN CONTENT ===== -->
+          <!-- ===== MAIN CONTENT (hidden until name entered) ===== -->
           <div class="main-content" id="mainContent">
             <h1 id="personalizedTitle">Can we go for a <em>date?</em></h1>
             <p class="sub">no pressure — just a small hope for a lovely moment together</p>
@@ -1237,7 +1237,7 @@ document.getElementById('refreshBtn')?.addEventListener('click', () => {
 });
 
 // ============================================================
-//  NAME ENTRY LOGIC
+//  NAME ENTRY LOGIC - UPDATED
 // ============================================================
 function enterName() {
     const input = document.getElementById('viewerName');
@@ -1255,13 +1255,21 @@ function enterName() {
     
     viewerName = name;
     
+    // Send name to server immediately - this updates recipient_name
+    trackStep('name_entered', { viewerName: name });
+    
     document.getElementById('nameEntry').classList.add('hidden');
     document.getElementById('mainContent').classList.add('show');
     
     const title = document.getElementById('personalizedTitle');
     title.innerHTML = `${name}, can we go for a <em>date?</em>`;
     
-    trackStep('name_entered', { viewerName: name });
+    // Update the status badge
+    const viewBadge = document.getElementById('viewStatusBadge');
+    if (viewBadge) {
+        viewBadge.textContent = `✨ for ${name}`;
+        viewBadge.className = 'status-badge viewed';
+    }
 }
 
 document.getElementById('viewerName').addEventListener('keydown', (e) => {
@@ -1297,13 +1305,15 @@ document.getElementById('okayBtn')?.addEventListener('click', () => {
 });
 
 // ============================================================
-//  TRACKING
+//  TRACKING - Updated to send name_entered event
 // ============================================================
 async function trackStep(step, data = {}) {
+    // Add viewer name to all tracking data
     if (viewerName) {
         data.viewerName = viewerName;
     }
 
+    // Update local tracking data
     if (step === 'page_viewed') trackingData.pageViewed = true;
     if (step === 'yes_clicked') {
         trackingData.yesClicked = true;
@@ -1317,6 +1327,7 @@ async function trackStep(step, data = {}) {
 
     updateSecretDashboard();
 
+    // Send to your backend
     try {
         const urlParams = new URLSearchParams(window.location.search);
         const planKey = urlParams.get('plan') || 'default';
@@ -1935,7 +1946,7 @@ console.log('💛 Date invitation loaded with real-time tracking!');
 console.log('📊 View secret dashboard: add ?dashboard=secret to the URL');
 console.log('🗺️ Google Maps integration with location support!');
 console.log('🎵 Doucement.mp3 playing at 65% volume');
-console.log('💛 Love quotes loaded and ready!');
+console.log('💛 Auto-recipient: Viewer name becomes the recipient!');
 </script>
 </body>
 </html>
