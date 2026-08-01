@@ -12,9 +12,8 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // PostgreSQL Connection
-// PostgreSQL Connection
 const pool = new Pool({
-    connectionString: process.env.DB_URL || process.env.DATABASE_URL,   // ← CHANGE TO THIS
+    connectionString: 'postgresql://date_planner_db_m5jx_user:6NlxfInsdNcYYdT90TkV445yWqEKl9fz@dpg-d9ml5rtaeets73a820og-a/date_planner_db_m5jx',
     ssl: { rejectUnauthorized: false }
 });
 pool.connect((err) => {
