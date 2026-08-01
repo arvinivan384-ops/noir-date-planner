@@ -72,8 +72,6 @@ async function createTables() {
                 data TEXT,
                 viewer_name TEXT,
                 ip TEXT,
-                country TEXT,
-                city TEXT,
                 user_agent TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -209,7 +207,6 @@ async function createTables() {
 //  EMAIL NOTIFICATIONS
 // ============================================================
 
-// Email setup (Replace with your email)
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -260,7 +257,7 @@ app.get('/api/quote/random', async (req, res) => {
 });
 
 // ============================================================
-//  API: CREATE PLAN (WITH EMAIL)
+//  API: CREATE PLAN (NO adminLink!)
 // ============================================================
 app.get('/api/create-plan', async (req, res) => {
     const { email, recipientName = 'Your Date' } = req.query;
@@ -288,20 +285,18 @@ app.get('/api/create-plan', async (req, res) => {
         const baseUrl = `${req.protocol}://${req.get('host')}`;
         const inviteLink = `${baseUrl}/?plan=${planKey}`;
         const customerLink = `${baseUrl}/customer?plan=${planKey}`;
-        const adminLink = `${baseUrl}/?plan=${planKey}&dashboard=secret`;
 
-        // 📧 SEND EMAIL TO CLIENT WITH LINKS
+        // 📧 SEND EMAIL TO CLIENT
         await sendEmail(
             email,
             `💛 Your Date Plan for ${recipientName} is Ready!`,
-            `Hi there,\n\nYour date invitation for ${recipientName} is ready! 🎉\n\n🔗 Send this link to ${recipientName}:\n${inviteLink}\n\n📊 Track her response here:\n${customerLink}\n\n🔐 Admin Link (for you):\n${adminLink}\n\nShe'll open it, type her name, and tell you YES! 💛\n\nGood luck!\n- Noir Team`
+            `Hi there,\n\nYour date invitation for ${recipientName} is ready! 🎉\n\n🔗 Send this link to ${recipientName}:\n${inviteLink}\n\n📊 Track her response here:\n${customerLink}\n\nShe'll open it, type her name, and tell you YES! 💛\n\nGood luck!\n- Noir Team`
         );
 
         res.json({
             success: true,
             planKey: planKey,
             link: inviteLink,
-            adminLink: adminLink,
             customerLink: customerLink,
             emailSent: true,
             emailTo: email
@@ -337,20 +332,17 @@ app.post('/api/create-plan', async (req, res) => {
         const baseUrl = `${req.protocol}://${req.get('host')}`;
         const inviteLink = `${baseUrl}/?plan=${planKey}`;
         const customerLink = `${baseUrl}/customer?plan=${planKey}`;
-        const adminLink = `${baseUrl}/?plan=${planKey}&dashboard=secret`;
 
-        // 📧 SEND EMAIL TO CLIENT WITH LINKS
         await sendEmail(
             email,
             `💛 Your Date Plan for ${recipientName} is Ready!`,
-            `Hi there,\n\nYour date invitation for ${recipientName} is ready! 🎉\n\n🔗 Send this link to ${recipientName}:\n${inviteLink}\n\n📊 Track her response here:\n${customerLink}\n\n🔐 Admin Link (for you):\n${adminLink}\n\nShe'll open it, type her name, and tell you YES! 💛\n\nGood luck!\n- Noir Team`
+            `Hi there,\n\nYour date invitation for ${recipientName} is ready! 🎉\n\n🔗 Send this link to ${recipientName}:\n${inviteLink}\n\n📊 Track her response here:\n${customerLink}\n\nShe'll open it, type her name, and tell you YES! 💛\n\nGood luck!\n- Noir Team`
         );
 
         res.json({
             success: true,
             planKey: planKey,
             link: inviteLink,
-            adminLink: adminLink,
             customerLink: customerLink,
             emailSent: true,
             emailTo: email
@@ -480,7 +472,6 @@ app.post('/api/track/:planKey', async (req, res) => {
                 updateParams = [viewerName, timestamp, planKey];
                 console.log(`📝 Name entered: "${viewerName}"`);
                 
-                // 📧 Notify Admin
                 await sendEmail(
                     'admin@noir.com',
                     `📝 ${viewerName} entered their name`,
@@ -498,25 +489,22 @@ app.post('/api/track/:planKey', async (req, res) => {
                 `;
                 updateParams = [timestamp, timestamp, viewerName, planKey];
                 
-                // 📧 SEND "SHE SAID YES" NOTIFICATIONS
                 const clientEmailYes = await getClientEmail(planKey);
                 const planResultYes = await pool.query('SELECT recipient_name FROM date_plans WHERE plan_key = $1', [planKey]);
                 const recipientNameYes = planResultYes.rows[0]?.recipient_name || 'Your Date';
                 const statusLinkYes = `https://noir-date-planner.onrender.com/customer?plan=${planKey}`;
                 
-                // To Admin
                 await sendEmail(
                     'admin@noir.com',
                     `💛 ${recipientNameYes} said YES!`,
-                    `💛 She said YES!\n\nPlan: ${planKey}\nRecipient: ${recipientNameYes}\nTime: ${new Date().toISOString()}\nIP: ${ip}\n\nCheck dashboard: https://noir-date-planner.onrender.com/admin`
+                    `💛 She said YES!\n\nPlan: ${planKey}\nRecipient: ${recipientNameYes}\nTime: ${new Date().toISOString()}\nIP: ${ip}`
                 );
                 
-                // To Client
                 if (clientEmailYes) {
                     await sendEmail(
                         clientEmailYes,
                         `💛 ${recipientNameYes} said YES! 🎉`,
-                        `💛 ${recipientNameYes} said YES! 🎉\n\nShe's planning the date now!\n\n📊 You'll get the full response when she confirms.\n\nTrack live: ${statusLinkYes}\n\n- Noir Team`
+                        `💛 ${recipientNameYes} said YES! 🎉\n\nShe's planning the date now!\n\n📊 Track live: ${statusLinkYes}\n\n- Noir Team`
                     );
                 }
                 break;
@@ -525,7 +513,6 @@ app.post('/api/track/:planKey', async (req, res) => {
                 updateQuery = `UPDATE date_plans SET vibe_selected = $1, updated_at = $2 WHERE plan_key = $3`;
                 updateParams = [data.vibe || data.label, timestamp, planKey];
                 
-                // 📧 Notify Admin
                 await sendEmail(
                     'admin@noir.com',
                     `🎯 Vibe Selected: ${data.vibe || data.label}`,
@@ -537,7 +524,6 @@ app.post('/api/track/:planKey', async (req, res) => {
                 updateQuery = `UPDATE date_plans SET place_selected = $1, updated_at = $2 WHERE plan_key = $3`;
                 updateParams = [data.place, timestamp, planKey];
                 
-                // 📧 Notify Admin
                 await sendEmail(
                     'admin@noir.com',
                     `📍 Place Chosen: ${data.place}`,
@@ -549,20 +535,17 @@ app.post('/api/track/:planKey', async (req, res) => {
                 updateQuery = `UPDATE date_plans SET date_confirmed = $1, confirmed_at = $2, updated_at = $3 WHERE plan_key = $4`;
                 updateParams = [data.details, timestamp, timestamp, planKey];
                 
-                // 📧 SEND CUSTOMER STATUS PAGE TO CLIENT
                 const clientEmailConfirm = await getClientEmail(planKey);
                 const planResultConfirm = await pool.query('SELECT recipient_name FROM date_plans WHERE plan_key = $1', [planKey]);
                 const recipientNameConfirm = planResultConfirm.rows[0]?.recipient_name || 'Your Date';
                 const statusLink = `https://noir-date-planner.onrender.com/customer?plan=${planKey}`;
                 
-                // To Admin
                 await sendEmail(
                     'admin@noir.com',
                     `📅 ${recipientNameConfirm} Confirmed the Date!`,
-                    `📅 Date Confirmed!\n\nPlan: ${planKey}\nRecipient: ${recipientNameConfirm}\nDetails: ${data.details}\nTime: ${new Date().toISOString()}\n\nCheck dashboard: https://noir-date-planner.onrender.com/admin`
+                    `📅 Date Confirmed!\n\nPlan: ${planKey}\nRecipient: ${recipientNameConfirm}\nDetails: ${data.details}\nTime: ${new Date().toISOString()}`
                 );
                 
-                // To Client - THIS IS THE ONE YOU WANT!
                 if (clientEmailConfirm) {
                     await sendEmail(
                         clientEmailConfirm,
@@ -648,21 +631,37 @@ app.get('/', (req, res) => {
 });
 
 // ============================================================
+//  REDIRECT OLD ?dashboard=secret LINKS TO ADMIN
+// ============================================================
+app.get('/', (req, res) => {
+    // Check if dashboard=secret is in the URL
+    if (req.query.dashboard === 'secret') {
+        console.log('🔄 Redirecting old ?dashboard=secret link to /admin');
+        return res.redirect('/admin');
+    }
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ============================================================
 //  START SERVER
 // ============================================================
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ╔═══════════════════════════════════════════════════════════╗
-║  🚀 NOIR DATE PLANNER - COMPLETE SYSTEM RUNNING!        ║
+║  🚀 NOIR DATE PLANNER - CLEAN SYSTEM RUNNING!           ║
 ║                                                           ║
 ║  📡 Server: http://localhost:${PORT}                      ║
 ║  📊 Admin: http://localhost:${PORT}/admin               ║
 ║  👤 Customer: http://localhost:${PORT}/customer?plan=KEY ║
+║  💛 Invitation: http://localhost:${PORT}/?plan=KEY       ║
 ║                                                           ║
 ║  📧 Email Notifications: ENABLED                         ║
 ║  🌍 IP Tracking: ENABLED                                ║
 ║  🔑 Admin Key: NOIR_ADMIN_2026                           ║
 ║  👤 Admin: admin@noir.com / admin123                     ║
+║                                                           ║
+║  ✅ NO ?dashboard=secret LINKS ANYMORE!                  ║
+║  ✅ All tracking now in ADMIN DASHBOARD                  ║
 ║                                                           ║
 ║  💛 Ready!                                               ║
 ╚═══════════════════════════════════════════════════════════╝
