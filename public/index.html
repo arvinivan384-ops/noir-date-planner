@@ -551,7 +551,6 @@
         margin-top: 6px;
       }
 
-      /* HIDE MAIN CONTENT UNTIL NAME IS ENTERED */
       .main-content {
         display: none;
       }
@@ -745,6 +744,7 @@
         margin-top: 12px;
       }
 
+      /* ---------- CONFIRMATION SECTION ---------- */
       .confirm {
         display: none;
         text-align: center;
@@ -776,6 +776,7 @@
       }
       .receipt .k { color: #e8829f; }
       .receipt .v { color: #eecf8f; }
+
       .confirm-actions {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -808,6 +809,29 @@
       }
       .confirm-action.back:hover {
         background: rgba(232, 130, 159, 0.08);
+      }
+
+      /* OKAY BUTTON */
+      .okay-btn {
+        margin-top: 16px;
+        padding: 12px 40px;
+        border-radius: 40px;
+        border: none;
+        background: linear-gradient(135deg, #eecf8f, #d9b25f);
+        color: #1a0f18;
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(217, 178, 95, 0.3);
+      }
+      .okay-btn:hover {
+        transform: scale(1.02);
+        box-shadow: 0 12px 35px rgba(217, 178, 95, 0.4);
+      }
+      .okay-btn:active {
+        transform: scale(0.98);
       }
 
       .form-view { display: block; }
@@ -991,7 +1015,7 @@
             </div>
           </div>
 
-          <!-- ===== MAIN CONTENT (hidden until name entered) ===== -->
+          <!-- ===== MAIN CONTENT ===== -->
           <div class="main-content" id="mainContent">
             <h1 id="personalizedTitle">Can we go for a <em>date?</em></h1>
             <p class="sub">no pressure — just a small hope for a lovely moment together</p>
@@ -1090,29 +1114,40 @@
           </div>
         </div>
 
+        <!-- ===== CONFIRMATION VIEW WITH QUOTE ===== -->
         <div class="confirm" id="confirmView">
           <div class="stamp">💛</div>
           <h2>It's a date.</h2>
           <p>A little yes can become a beautiful memory.</p>
+
+          <!-- ===== LOVE QUOTE ===== -->
+          <div id="quoteContainer" style="margin: 20px 0; background: rgba(255,255,255,0.02); border-radius: 16px; padding: 20px; border-left: 3px solid #eecf8f;">
+            <p id="loveQuote" style="font-family: 'Playfair Display', serif; font-size: 18px; font-style: italic; color: #eecf8f; line-height: 1.6;">"Love is not about how many days, months, or years you've been together. It's about how much you love each other every single day."</p>
+            <p id="quoteAuthor" style="font-size: 13px; color: #a09cb0; margin-top: 8px; text-align: right;">— Unknown</p>
+          </div>
+
           <div class="receipt" id="receipt"></div>
-          
+
+          <!-- ===== OKAY BUTTON ===== -->
+          <button class="okay-btn" id="okayBtn">💛 Okay</button>
+
           <div class="confirm-actions">
             <button class="confirm-action" id="shareBtn" type="button">📤 share plan</button>
             <button class="confirm-action" id="calendarBtn" type="button">📅 calendar</button>
           </div>
-          
+
           <div style="margin-top: 14px; display: grid; grid-template-columns: 1fr; gap: 10px;">
             <button class="confirm-action maps" id="googleMapsBtn" type="button">
               🗺️ Show me the exact location on Google Maps
             </button>
           </div>
-          
+
           <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr; gap: 10px;">
             <button class="confirm-action back" id="goBackBtn" type="button">
               ↩️ Go Back · Change Plan
             </button>
           </div>
-          
+
           <div style="margin-top: 18px; font-size: 13px; color: #eecf8f; border-top: 1px solid #2a1e33; padding-top: 14px;">
             ✦ Dar es Salaam · the next chapter starts here ✦
           </div>
@@ -1220,19 +1255,15 @@ function enterName() {
     
     viewerName = name;
     
-    // Hide name entry, show main content
     document.getElementById('nameEntry').classList.add('hidden');
     document.getElementById('mainContent').classList.add('show');
     
-    // Personalize the title
     const title = document.getElementById('personalizedTitle');
     title.innerHTML = `${name}, can we go for a <em>date?</em>`;
     
-    // Track that name was entered
     trackStep('name_entered', { viewerName: name });
 }
 
-// Name input enter key
 document.getElementById('viewerName').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
         e.preventDefault();
@@ -1240,20 +1271,39 @@ document.getElementById('viewerName').addEventListener('keydown', (e) => {
     }
 });
 
-// Name submit button
 document.getElementById('nameSubmitBtn').addEventListener('click', enterName);
 
 // ============================================================
-//  TRACKING - Sends to your backend
+//  FETCH LOVE QUOTE
 // ============================================================
+async function fetchLoveQuote() {
+    try {
+        const response = await fetch('/api/quote/random');
+        const data = await response.json();
+        document.getElementById('loveQuote').textContent = `"${data.quote}"`;
+        document.getElementById('quoteAuthor').textContent = `— ${data.author}`;
+    } catch (error) {
+        document.getElementById('loveQuote').textContent = '"Love is not about how many days, months, or years you\'ve been together. It\'s about how much you love each other every single day."';
+        document.getElementById('quoteAuthor').textContent = '— Unknown';
+    }
+}
 
+// ============================================================
+//  OKAY BUTTON - QUITS THE PAGE
+// ============================================================
+document.getElementById('okayBtn')?.addEventListener('click', () => {
+    alert('💛 Thank you for making someone\'s day!');
+    window.location.href = '/';
+});
+
+// ============================================================
+//  TRACKING
+// ============================================================
 async function trackStep(step, data = {}) {
-    // Add viewer name to all tracking data
     if (viewerName) {
         data.viewerName = viewerName;
     }
 
-    // Update local tracking data
     if (step === 'page_viewed') trackingData.pageViewed = true;
     if (step === 'yes_clicked') {
         trackingData.yesClicked = true;
@@ -1267,7 +1317,6 @@ async function trackStep(step, data = {}) {
 
     updateSecretDashboard();
 
-    // Send to your backend
     try {
         const urlParams = new URLSearchParams(window.location.search);
         const planKey = urlParams.get('plan') || 'default';
@@ -1299,30 +1348,30 @@ async function startMusic() {
     if (musicPlaying) return;
 
     try {
-    if (!audioPlayer) {
-      audioPlayer = new Audio(AUDIO_URL);
-      audioPlayer.loop = true;
-      audioPlayer.preload = 'auto';
-      audioPlayer.volume = MUSIC_VOLUME;
-    }
+        if (!audioPlayer) {
+            audioPlayer = new Audio(AUDIO_URL);
+            audioPlayer.loop = true;
+            audioPlayer.preload = 'auto';
+            audioPlayer.volume = MUSIC_VOLUME;
+        }
 
-    await audioPlayer.play();
+        await audioPlayer.play();
         musicPlaying = true;
         soundBtn.textContent = '🎵 Marioo · Doucement';
         soundBtn.setAttribute('aria-pressed', 'true');
         soundBtn.classList.add('playing');
 
-    console.log('Doucement.mp3 playing at 65% volume');
+        console.log('Doucement.mp3 playing at 65% volume');
     } catch (error) {
-    console.warn('Could not play Doucement.mp3:', error);
-    soundBtn.textContent = '♪ play music';
+        console.warn('Could not play Doucement.mp3:', error);
+        soundBtn.textContent = '♪ play music';
     }
 }
 
 function stopMusic() {
-  if (audioPlayer) {
-    audioPlayer.pause();
-    audioPlayer.currentTime = 0;
+    if (audioPlayer) {
+        audioPlayer.pause();
+        audioPlayer.currentTime = 0;
     }
     musicPlaying = false;
     soundBtn.textContent = '♪ sound off';
@@ -1588,7 +1637,7 @@ const placesData = {
         { name: 'Mbezi Beach', url: 'https://www.google.com/maps/search/Mbezi+Beach+Dar+es+Salaam' },
         { name: 'Oyster Bay Beach', url: 'https://www.google.com/maps/search/Oyster+Bay+Beach+Dar+es+Salaam' },
         { name: 'ledger plaza bahari beach hotel', url: 'https://www.google.com/maps/search/Ledger+Plaza+Bahari+Beach+Hotel+Dar+es+Salaam' },
-        { name:  'malaika beach club', url: 'https://www.google.com/maps/search/Malaika+Beach+Club+Dar+es+Salaam'},
+        { name: 'malaika beach club', url: 'https://www.google.com/maps/search/Malaika+Beach+Club+Dar+es+Salaam'},
         { name: 'A sunset beach walk', url: '' },
         { name: 'A private beach picnic', url: '' },
     ],
@@ -1610,7 +1659,7 @@ const placesData = {
         { name: 'Viva Cinemas (Quality Mall)', url: 'https://www.google.com/maps/search/Viva+Cinemas+Dar+es+Salaam' },
         { name: 'Cineplex (Mikocheni)', url: 'https://www.google.com/maps/search/Cineplex+Dar+es+Salaam' },
         { name: 'Century Cinemax (DFM)', url: 'https://www.google.com/maps/search/Century+Cinemax+DFM+Dar+es+Salaam' },
-        { name: ' century cinemax Mkuki house', url: 'https://www.google.com/maps/search/Century+Cinemax+Mkuki+House+Dar+es+Salaam'},
+        { name: 'century cinemax Mkuki house', url: 'https://www.google.com/maps/search/Century+Cinemax+Mkuki+House+Dar+es+Salaam'},
         { name: 'holly wood movie house', url: 'https://www.google.com/maps/search/Hollywood+Movie+House+Dar+es+Salaam'},
         { name: 'A movie night at home', url: '' },
     ],
@@ -1792,6 +1841,9 @@ ctaBtn.addEventListener('click', async () => {
         viewerName: viewerName
     });
     
+    // Fetch love quote
+    await fetchLoveQuote();
+    
     document.getElementById('formView').classList.add('hide');
     document.getElementById('confirmView').classList.add('show');
     document.getElementById('receipt').innerHTML =
@@ -1883,6 +1935,7 @@ console.log('💛 Date invitation loaded with real-time tracking!');
 console.log('📊 View secret dashboard: add ?dashboard=secret to the URL');
 console.log('🗺️ Google Maps integration with location support!');
 console.log('🎵 Doucement.mp3 playing at 65% volume');
+console.log('💛 Love quotes loaded and ready!');
 </script>
 </body>
 </html>
