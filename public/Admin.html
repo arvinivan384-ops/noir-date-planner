@@ -575,6 +575,195 @@
 
         .toast.hidden { display: none; }
 
+        /* --- LOGIN OVERLAY --- */
+        .login-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(15px);
+        }
+
+        .login-overlay.show {
+            display: flex;
+        }
+
+        .login-modal {
+            background: rgba(20, 14, 27, 0.95);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(238, 207, 143, 0.15);
+            border-radius: 24px;
+            padding: 45px 40px;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: 0 25px 60px -20px #000000cc;
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        .login-modal .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-modal .login-header .icon {
+            font-size: 48px;
+            color: #eecf8f;
+            margin-bottom: 10px;
+        }
+
+        .login-modal .login-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fcf5f0 20%, #eecf8f 55%, #e8829f 85%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-modal .login-header p {
+            color: rgba(160, 156, 176, 0.7);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .login-modal .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .login-modal .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(160, 156, 176, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .login-modal .form-group .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .login-modal .form-group .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            color: rgba(160, 156, 176, 0.4);
+            font-size: 16px;
+        }
+
+        .login-modal .form-group input {
+            width: 100%;
+            padding: 12px 16px 12px 44px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .login-modal .form-group input:focus {
+            border-color: rgba(238, 207, 143, 0.3);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 30px rgba(238, 207, 143, 0.03);
+        }
+
+        .login-modal .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0 15px;
+        }
+
+        .login-modal .form-options label {
+            font-size: 13px;
+            color: rgba(160, 156, 176, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .login-modal .form-options label input[type="checkbox"] {
+            accent-color: #eecf8f;
+            width: 16px;
+            height: 16px;
+        }
+
+        .login-modal .error-message {
+            display: none;
+            background: rgba(232, 130, 159, 0.08);
+            border: 1px solid rgba(232, 130, 159, 0.15);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #e8829f;
+            font-size: 13px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .login-modal .error-message.show {
+            display: block;
+            animation: shake 0.4s ease;
+        }
+
+        .login-modal .login-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #eecf8f, #d9b25f);
+            color: #1a0f18;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(217, 178, 95, 0.3);
+            font-family: 'Playfair Display', serif;
+            letter-spacing: 0.02em;
+        }
+
+        .login-modal .login-btn:hover {
+            transform: scale(1.01);
+            box-shadow: 0 12px 35px rgba(217, 178, 95, 0.4);
+        }
+
+        .login-modal .login-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: rgba(106, 90, 106, 0.6);
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.04em;
+        }
+
+        .login-modal .login-footer .heart {
+            color: #e8829f;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
         /* --- SCROLLBAR --- */
         ::-webkit-scrollbar {
             width: 4px;
@@ -640,6 +829,11 @@
             th, td {
                 padding: 8px 10px;
             }
+
+            .login-modal {
+                padding: 30px 20px;
+                margin: 20px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -682,6 +876,10 @@
             .modal {
                 padding: 20px;
             }
+
+            .login-modal {
+                padding: 25px 15px;
+            }
         }
 
         @media (min-width: 769px) {
@@ -704,6 +902,57 @@
         <div class="slide" style="background-image: url('/background4.jpg');"></div>
         <div class="slide" style="background-image: url('/backgrounds.jpg');"></div>
         <div class="slide" style="background-image: url('/Pinterest.jpg');"></div>
+    </div>
+
+    <!-- =========================================================
+         LOGIN OVERLAY (Shows on Admin page)
+         ========================================================= -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-modal">
+            <div class="login-header">
+                <div class="icon">✦</div>
+                <h1>NOIR</h1>
+                <p>Admin Access Required</p>
+            </div>
+
+            <form class="login-form" id="adminLoginForm" onsubmit="return handleAdminLogin(event)">
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="adminLoginEmail" placeholder="admin@noir.com" value="admin@noir.com" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="adminLoginPassword" placeholder="••••••••" value="admin123" required>
+                    </div>
+                </div>
+
+                <div class="form-options">
+                    <label>
+                        <input type="checkbox" id="adminRememberMe" checked>
+                        Remember me
+                    </label>
+                </div>
+
+                <div class="error-message" id="adminLoginError">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Invalid credentials. Please try again.
+                </div>
+
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Access Dashboard
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <span>✦</span> Secured Access <span class="heart">♥</span> NOIR Admin <span>✦</span>
+            </div>
+        </div>
     </div>
 
     <!-- =========================================================
@@ -999,7 +1248,67 @@
          JAVASCRIPT
          ========================================================= -->
     <script>
-        // --- SLIDESHOW ---
+        // ============================================================
+        //  CHECK LOGIN - Show Login Modal if Not Logged In
+        // ============================================================
+        if (!sessionStorage.getItem('adminLoggedIn') && !localStorage.getItem('adminLoggedIn')) {
+            document.getElementById('loginOverlay').classList.add('show');
+        }
+
+        // ============================================================
+        //  ADMIN LOGIN (Inside Dashboard)
+        // ============================================================
+        function handleAdminLogin(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('adminLoginEmail').value.trim();
+            const password = document.getElementById('adminLoginPassword').value.trim();
+            const errorEl = document.getElementById('adminLoginError');
+
+            const ADMIN_EMAIL = 'admin@noir.com';
+            const ADMIN_PASSWORD = 'admin123';
+
+            errorEl.classList.remove('show');
+
+            if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                if (document.getElementById('adminRememberMe').checked) {
+                    localStorage.setItem('adminLoggedIn', 'true');
+                }
+                document.getElementById('loginOverlay').classList.remove('show');
+                showToast('✅ Welcome back, Admin!', 'success');
+                loadData();
+                refreshTracker();
+            } else {
+                errorEl.classList.add('show');
+                showToast('❌ Invalid email or password', 'error');
+            }
+
+            return false;
+        }
+
+        // Close login overlay on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.getElementById('loginOverlay').classList.remove('show');
+            }
+        });
+
+        // ============================================================
+        //  LOGOUT - Show Login Modal Instead of Redirect
+        // ============================================================
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                sessionStorage.clear();
+                localStorage.clear();
+                showToast('👋 Logged out successfully!', 'success');
+                document.getElementById('loginOverlay').classList.add('show');
+            }
+        }
+
+        // ============================================================
+        //  SLIDESHOW
+        // ============================================================
         const slides = document.querySelectorAll('.slide');
         let currentSlideIndex = 0;
         const transitionSpeed = 4000;
@@ -1011,13 +1320,14 @@
         }
         setInterval(changeSlide, transitionSpeed);
 
-        // --- SIDEBAR TOGGLE ---
+        // ============================================================
+        //  SIDEBAR TOGGLE
+        // ============================================================
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('open');
         }
 
-        // Close sidebar when clicking outside on mobile
         document.addEventListener('click', function(event) {
             const sidebar = document.getElementById('sidebar');
             const toggle = document.querySelector('.menu-toggle-btn');
@@ -1028,7 +1338,9 @@
             }
         });
 
-        // --- TOAST NOTIFICATION ---
+        // ============================================================
+        //  TOAST NOTIFICATION
+        // ============================================================
         function showToast(message, type = '') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -1040,7 +1352,9 @@
             }, 3000);
         }
 
-        // --- SECTION NAVIGATION ---
+        // ============================================================
+        //  SECTION NAVIGATION
+        // ============================================================
         function showSection(section) {
             document.querySelectorAll('[id^="section-"]').forEach(el => el.style.display = 'none');
             const target = document.getElementById('section-' + section);
@@ -1077,19 +1391,9 @@
             }
         }
 
-        // --- LOGOUT ---
-        function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                sessionStorage.clear();
-                localStorage.clear();
-                showToast('👋 Logged out successfully!', 'success');
-                setTimeout(() => {
-                    window.location.href = '/';
-                }, 500);
-            }
-        }
-
-        // --- MODAL ---
+        // ============================================================
+        //  MODAL
+        // ============================================================
         function showModal(type) {
             if (type === 'createPlan') {
                 document.getElementById('createPlanModal').classList.add('show');
@@ -1156,7 +1460,7 @@
         }
 
         // ============================================================
-        //  COPY PLAN LINKS - NEW FUNCTION!
+        //  COPY PLAN LINKS
         // ============================================================
         function copyPlanLinks(planKey) {
             const baseUrl = 'https://noir-date-planner.onrender.com';
@@ -1169,7 +1473,6 @@
             navigator.clipboard.writeText(message).then(() => {
                 showToast('✅ All links copied to clipboard!', 'success');
             }).catch(() => {
-                // Fallback
                 const textarea = document.createElement('textarea');
                 textarea.value = message;
                 document.body.appendChild(textarea);
