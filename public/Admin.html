@@ -279,6 +279,58 @@
             background: rgba(255, 255, 255, 0.02);
         }
 
+        /* --- TRACKER SECTION --- */
+        .tracker-section {
+            background: rgba(0, 240, 255, 0.03);
+            border: 1px solid rgba(0, 240, 255, 0.08);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(15px);
+        }
+
+        .tracker-section h2 {
+            color: #00f0ff;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tracker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .tracker-item {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .tracker-item .label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6a5a6a;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .tracker-item .value {
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .tracker-item .value.pending { color: #e8829f; }
+        .tracker-item .value.done { color: #8fd0a5; }
+        .tracker-item .value.yes { color: #eecf8f; }
+
         /* --- TABLE --- */
         .table-section {
             margin-top: 15px;
@@ -523,6 +575,10 @@
                 gap: 12px;
             }
 
+            .tracker-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
             .top-bar {
                 flex-direction: column;
                 align-items: flex-start;
@@ -543,6 +599,10 @@
             .card-grid {
                 grid-template-columns: 1fr 1fr;
                 gap: 8px;
+            }
+
+            .tracker-grid {
+                grid-template-columns: 1fr 1fr;
             }
 
             .stat-value {
@@ -587,7 +647,7 @@
 <body>
 
     <!-- =========================================================
-         BACKGROUND SLIDESHOW - FIXED IMAGE PATHS
+         BACKGROUND SLIDESHOW
          ========================================================= -->
     <div id="slideshow-container">
         <div class="bg-overlay"></div>
@@ -659,6 +719,43 @@
 
             <!-- SECTION: DASHBOARD -->
             <div id="section-dashboard">
+
+                <!-- =========================================================
+                     LIVE TRACKER
+                     ========================================================= -->
+                <div class="tracker-section">
+                    <h2>
+                        <span>📊 LIVE TRACKING · YOUR DATE</span>
+                        <button class="action-btn primary" onclick="refreshTracker()" style="font-size:11px; padding:4px 12px;">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </h2>
+                    <div class="tracker-grid" id="trackerGrid">
+                        <div class="tracker-item">
+                            <div class="label">📄 page viewed</div>
+                            <div class="value pending" id="trackPageViewed">⏳ pending</div>
+                        </div>
+                        <div class="tracker-item">
+                            <div class="label">💛 said yes</div>
+                            <div class="value pending" id="trackYes">⏳ waiting</div>
+                        </div>
+                        <div class="tracker-item">
+                            <div class="label">🎯 vibe selected</div>
+                            <div class="value pending" id="trackVibe">⏳ waiting</div>
+                        </div>
+                        <div class="tracker-item">
+                            <div class="label">📍 place chosen</div>
+                            <div class="value pending" id="trackPlace">⏳ waiting</div>
+                        </div>
+                        <div class="tracker-item" style="grid-column: span 2;">
+                            <div class="label">📅 date confirmed</div>
+                            <div class="value pending" id="trackConfirm">⏳ waiting</div>
+                        </div>
+                    </div>
+                    <div style="text-align:right; margin-top:10px; font-size:10px; color:#6a5a6a; font-family:'JetBrains Mono',monospace;">
+                        <span id="trackerTimestamp">Last update: —</span>
+                    </div>
+                </div>
 
                 <!-- STATS CARDS -->
                 <div class="card-grid">
@@ -975,6 +1072,7 @@
                         </button>
                     `;
                     loadData();
+                    refreshTracker();
                 } else {
                     resultDiv.innerHTML = '❌ Error: ' + (data.error || 'Unknown error');
                 }
@@ -990,7 +1088,7 @@
         }
 
         // ============================================================
-        //  DELETE PLAN FUNCTION - ADDED
+        //  DELETE PLAN FUNCTION
         // ============================================================
         async function deletePlan(key) {
             if (!confirm('🗑️ Delete this response?')) return;
@@ -1008,9 +1106,87 @@
                 loadResponses();
                 loadCustomers();
                 loadAnalytics();
+                refreshTracker();
             } catch (error) {
                 console.error('Error deleting:', error);
                 alert('❌ Failed to delete');
+            }
+        }
+
+        // ============================================================
+        //  TRACKER FUNCTIONS
+        // ============================================================
+        let trackerData = {
+            pageViewed: false,
+            yesClicked: false,
+            vibeSelected: null,
+            placeSelected: null,
+            dateConfirmed: null,
+            lastUpdate: null
+        };
+
+        function getPlanKeyFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('plan') || null;
+        }
+
+        async function refreshTracker() {
+            const planKey = getPlanKeyFromURL();
+            if (!planKey) {
+                document.getElementById('trackerTimestamp').textContent = 'No plan selected';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/status/${planKey}`);
+                const data = await response.json();
+                
+                if (data) {
+                    trackerData.pageViewed = data.page_viewed || false;
+                    trackerData.yesClicked = data.yes_clicked || false;
+                    trackerData.vibeSelected = data.vibe_selected || null;
+                    trackerData.placeSelected = data.place_selected || null;
+                    trackerData.dateConfirmed = data.date_confirmed || null;
+                    trackerData.lastUpdate = new Date().toISOString();
+                    updateTrackerUI();
+                }
+            } catch (error) {
+                console.error('Tracker error:', error);
+            }
+        }
+
+        function updateTrackerUI() {
+            const pageEl = document.getElementById('trackPageViewed');
+            const yesEl = document.getElementById('trackYes');
+            const vibeEl = document.getElementById('trackVibe');
+            const placeEl = document.getElementById('trackPlace');
+            const confirmEl = document.getElementById('trackConfirm');
+            const timestampEl = document.getElementById('trackerTimestamp');
+
+            if (pageEl) {
+                pageEl.textContent = trackerData.pageViewed ? '✅ viewed' : '⏳ pending';
+                pageEl.className = trackerData.pageViewed ? 'value done' : 'value pending';
+            }
+            if (yesEl) {
+                yesEl.textContent = trackerData.yesClicked ? '💛 YES!' : '⏳ waiting';
+                yesEl.className = trackerData.yesClicked ? 'value yes' : 'value pending';
+            }
+            if (vibeEl) {
+                vibeEl.textContent = trackerData.vibeSelected ? `🎯 ${trackerData.vibeSelected}` : '⏳ waiting';
+                vibeEl.className = trackerData.vibeSelected ? 'value done' : 'value pending';
+            }
+            if (placeEl) {
+                placeEl.textContent = trackerData.placeSelected ? `📍 ${trackerData.placeSelected}` : '⏳ waiting';
+                placeEl.className = trackerData.placeSelected ? 'value done' : 'value pending';
+            }
+            if (confirmEl) {
+                confirmEl.textContent = trackerData.dateConfirmed ? `✅ ${trackerData.dateConfirmed}` : '⏳ waiting';
+                confirmEl.className = trackerData.dateConfirmed ? 'value done' : 'value pending';
+            }
+            if (timestampEl) {
+                timestampEl.textContent = trackerData.lastUpdate 
+                    ? `Last update: ${new Date(trackerData.lastUpdate).toLocaleString()}`
+                    : 'Last update: —';
             }
         }
 
@@ -1029,6 +1205,7 @@
                 if (!response.ok) throw new Error('Failed to load data');
                 const data = await response.json();
                 renderData(data);
+                refreshTracker();
             } catch (error) {
                 console.error('Error loading data:', error);
                 tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:rgba(232,130,159,0.6);">❌ ${error.message}</td></tr>`;
@@ -1266,7 +1443,10 @@
         loadData();
 
         // Auto-refresh every 15 seconds
-        setInterval(loadData, 15000);
+        setInterval(() => {
+            loadData();
+            refreshTracker();
+        }, 15000);
     </script>
 </body>
 </html>
