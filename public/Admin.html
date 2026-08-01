@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* --- RESET & BASIC SETUP --- */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -349,7 +348,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
-            min-width: 600px;
+            min-width: 700px;
         }
 
         th {
@@ -438,23 +437,6 @@
             color: rgba(160, 156, 176, 0.8);
             margin-bottom: 10px;
             line-height: 1.6;
-        }
-
-        .modal input {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            background: rgba(255, 255, 255, 0.03);
-            color: #fff;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        .modal input:focus {
-            outline: none;
-            border-color: rgba(0, 240, 255, 0.15);
-            background: rgba(255, 255, 255, 0.05);
         }
 
         .modal .close-btn {
@@ -706,6 +688,7 @@
                                 <tr>
                                     <th>Customer</th>
                                     <th>Recipient</th>
+                                    <th>Viewer Email</th>
                                     <th>Status</th>
                                     <th>Vibe</th>
                                     <th>Place</th>
@@ -714,7 +697,7 @@
                                 </tr>
                             </thead>
                             <tbody id="plansBody">
-                                <tr><td colspan="7" class="loading-text"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+                                <tr><td colspan="8" class="loading-text"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -731,6 +714,7 @@
                                 <tr>
                                     <th>Customer</th>
                                     <th>Recipient</th>
+                                    <th>Viewer Email</th>
                                     <th>Viewed</th>
                                     <th>YES</th>
                                     <th>Vibe</th>
@@ -740,7 +724,7 @@
                                 </tr>
                             </thead>
                             <tbody id="responsesBody">
-                                <tr><td colspan="8" class="loading-text">Loading responses...</td></tr>
+                                <tr><td colspan="9" class="loading-text">Loading responses...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -859,7 +843,6 @@
             sidebar.classList.toggle('open');
         }
 
-        // Close sidebar when clicking outside on mobile
         document.addEventListener('click', function(event) {
             const sidebar = document.getElementById('sidebar');
             const toggle = document.querySelector('.menu-toggle-btn');
@@ -875,7 +858,7 @@
             document.querySelectorAll('[id^="section-"]').forEach(el => el.style.display = 'none');
             const target = document.getElementById('section-' + section);
             if (target) target.style.display = 'block';
-            
+
             const titles = {
                 'dashboard': 'DASHBOARD',
                 'responses': 'RESPONSES',
@@ -884,7 +867,7 @@
                 'account': 'ACCOUNT'
             };
             document.getElementById('pageTitle').textContent = titles[section] || 'DASHBOARD';
-            
+
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             const navItems = document.querySelectorAll('.nav-item');
             const sectionMap = {
@@ -897,11 +880,11 @@
             if (sectionMap[section] !== undefined && navItems[sectionMap[section]]) {
                 navItems[sectionMap[section]].classList.add('active');
             }
-            
+
             if (section === 'responses') loadResponses();
             if (section === 'customers') loadCustomers();
             if (section === 'analytics') loadAnalytics();
-            
+
             if (window.innerWidth <= 768) {
                 document.getElementById('sidebar').classList.remove('open');
             }
@@ -940,20 +923,20 @@
         async function createNewPlan() {
             const email = document.getElementById('newPlanEmail').value.trim();
             const recipientName = document.getElementById('newPlanRecipient').value.trim() || 'Radhia';
-            
+
             if (!email) {
                 alert('Please enter a customer email.');
                 return;
             }
-            
+
             const resultDiv = document.getElementById('newPlanResult');
             resultDiv.style.display = 'block';
             resultDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
-            
+
             try {
                 const response = await fetch(`/api/create-plan?email=${encodeURIComponent(email)}&recipientName=${encodeURIComponent(recipientName)}`);
                 const data = await response.json();
-                
+
                 if (data.success) {
                     resultDiv.innerHTML = `
                         ✅ Plan created successfully!<br>
@@ -983,7 +966,7 @@
 
         async function loadData() {
             const tbody = document.getElementById('plansBody');
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:rgba(106,90,106,0.6);"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:rgba(106,90,106,0.6);"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
 
             try {
                 const response = await fetch('/api/admin/plans', {
@@ -995,7 +978,7 @@
                 renderData(data);
             } catch (error) {
                 console.error('Error loading data:', error);
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:rgba(232,130,159,0.6);">❌ ${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:rgba(232,130,159,0.6);">❌ ${error.message}</td></tr>`;
             }
         }
 
@@ -1008,7 +991,7 @@
 
             const tbody = document.getElementById('plansBody');
             if (plans.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:rgba(106,90,106,0.6);">No plans yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:rgba(106,90,106,0.6);">No plans yet</td></tr>';
                 return;
             }
 
@@ -1026,6 +1009,7 @@
                     <tr>
                         <td style="font-size:12px;color:rgba(160,156,176,0.7);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.user_email || 'Unknown'}</td>
                         <td>${plan.recipient || 'Radhia'}</td>
+                        <td style="font-size:11px;color:rgba(160,156,176,0.5);">${plan.viewer_email || '—'}</td>
                         <td>${statusBadge}</td>
                         <td>${plan.vibe || '—'}</td>
                         <td style="font-size:12px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.place || '—'}</td>
@@ -1046,7 +1030,7 @@
             const content = document.getElementById('planDetailContent');
             modal.classList.add('show');
             content.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
-            
+
             try {
                 const response = await fetch(`/api/status/${planKey}`);
                 const data = await response.json();
@@ -1068,7 +1052,7 @@
         function exportData() {
             const table = document.querySelector('table');
             const rows = table.querySelectorAll('tr');
-            let csv = 'Customer,Recipient,Status,Vibe,Place,Confirmed\n';
+            let csv = 'Customer,Recipient,Viewer Email,Status,Vibe,Place,Confirmed\n';
             rows.forEach((row, index) => {
                 if (index === 0) return;
                 const cells = row.querySelectorAll('td');
@@ -1081,7 +1065,7 @@
                     csv += rowData.join(',') + '\n';
                 }
             });
-            
+
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1094,24 +1078,25 @@
         // --- LOAD RESPONSES ---
         async function loadResponses() {
             const tbody = document.getElementById('responsesBody');
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:rgba(106,90,106,0.6);"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
-            
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:rgba(106,90,106,0.6);"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+
             try {
                 const response = await fetch('/api/admin/plans', {
                     headers: { 'x-admin-key': ADMIN_KEY }
                 });
                 const data = await response.json();
                 const plans = data.plans || [];
-                
+
                 if (plans.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:rgba(106,90,106,0.6);">No responses yet</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:rgba(106,90,106,0.6);">No responses yet</td></tr>';
                     return;
                 }
-                
+
                 tbody.innerHTML = plans.map(plan => `
                     <tr>
                         <td style="font-size:12px;color:rgba(160,156,176,0.7);">${plan.user_email || 'Unknown'}</td>
                         <td>${plan.recipient || 'Radhia'}</td>
+                        <td style="font-size:11px;color:rgba(160,156,176,0.5);">${plan.viewer_email || '—'}</td>
                         <td>${plan.page_viewed ? '✅' : '⏳'}</td>
                         <td>${plan.yes_clicked ? '💛' : '⏳'}</td>
                         <td>${plan.vibe || '—'}</td>
@@ -1121,7 +1106,7 @@
                     </tr>
                 `).join('');
             } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:rgba(232,130,159,0.6);">❌ Error loading</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:rgba(232,130,159,0.6);">❌ Error loading</td></tr>`;
             }
         }
 
@@ -1129,14 +1114,14 @@
         async function loadCustomers() {
             const tbody = document.getElementById('customersBody');
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(106,90,106,0.6);"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
-            
+
             try {
                 const response = await fetch('/api/admin/plans', {
                     headers: { 'x-admin-key': ADMIN_KEY }
                 });
                 const data = await response.json();
                 const plans = data.plans || [];
-                
+
                 const customers = {};
                 plans.forEach(p => {
                     if (!customers[p.user_email]) {
@@ -1145,19 +1130,19 @@
                     customers[p.user_email].plans++;
                     if (p.yes_clicked) customers[p.user_email].yes++;
                 });
-                
+
                 const customerArray = Object.entries(customers).map(([email, data]) => ({
                     email,
                     plans: data.plans,
                     yes: data.yes,
                     joined: data.joined
                 }));
-                
+
                 if (customerArray.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(106,90,106,0.6);">No customers yet</td></tr>';
                     return;
                 }
-                
+
                 tbody.innerHTML = customerArray.map(c => `
                     <tr>
                         <td style="color:rgba(160,156,176,0.7);">${c.email}</td>
@@ -1179,11 +1164,11 @@
                 });
                 const data = await response.json();
                 const plans = data.plans || [];
-                
+
                 const total = plans.length;
                 const yesCount = plans.filter(p => p.yes_clicked).length;
                 const confirmedCount = plans.filter(p => p.date_confirmed).length;
-                
+
                 const vibeCounts = {};
                 plans.forEach(p => {
                     if (p.vibe) {
@@ -1198,7 +1183,7 @@
                         topVibe = vibe;
                     }
                 }
-                
+
                 document.getElementById('analyticsTotalPlans').textContent = total;
                 document.getElementById('analyticsYesRate').textContent = total > 0 ? Math.round((yesCount / total) * 100) + '%' : '0%';
                 document.getElementById('analyticsTopVibe').textContent = topVibe;
