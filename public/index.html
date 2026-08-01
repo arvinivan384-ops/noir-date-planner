@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>noir · a little date invitation</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap" rel="stylesheet" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: radial-gradient(circle at 30% 20%, #1f1129, #0b0710);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Inter', sans-serif;
+        padding: 20px 16px;
+        color: #f2ebe6;
+        overflow-x: hidden;
+      }
+      body.celebrating .invite {
+        box-shadow: 0 0 0 1px rgba(238, 207, 143, 0.55), 0 25px 70px -15px rgba(232, 130, 159, 0.55);
+      }
+      body::before {
+        content: '✦  ·  ✧  ·  ♥  ·  ✧  ·  ✦';
+        position: fixed;
+        inset: 0 0 auto;
+        padding: 18px;
+        color: rgba(238, 207, 143, 0.22);
+        font: 16px 'Playfair Display', serif;
+        letter-spacing: 2.8em;
+        text-align: center;
+        pointer-events: none;
+      }
+
+      .stage {
+        max-width: 720px;
+        width: 100%;
+        position: relative;
+      }
+      .sound-toggle {
+        position: absolute;
+        top: 10px;
+        right: 0;
+        z-index: 4;
+        border: 1px solid rgba(238, 207, 143, 0.24);
+        border-radius: 30px;
+        padding: 8px 13px;
+        background: rgba(20, 14, 27, 0.58);
+        color: #eecf8f;
+        font: 11px 'JetBrains Mono', monospace;
+        cursor: pointer;
+        backdrop-filter: blur(8px);
+        transition: all 0.3s ease;
+      }
+      .sound-toggle:hover { background: rgba(238, 207, 143, 0.12); }
+      .sound-toggle.playing {
+        color: #8fd0a5;
+        border-color: rgba(142, 208, 165, 0.3);
+      }
+      #celebrationCanvas {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 20;
+      }
+      .stage::before {
+        content: '';
+        position: fixed;
+        width: 320px;
+        height: 320px;
+        right: -120px;
+        bottom: -130px;
+        border-radius: 50%;
+        background: rgba(232, 130, 159, 0.12);
+        filter: blur(45px);
+        pointer-events: none;
+      }
+
+      /* ---------- SECRET DASHBOARD ---------- */
+      .secret-dashboard {
+        display: none;
+        animation: fadeUp 0.8s ease forwards;
+        padding: 20px;
+        background: rgba(20, 14, 27, 0.95);
+        border-radius: 24px;
+        border: 1px solid rgba(238, 207, 143, 0.15);
+        margin-bottom: 24px;
+      }
+      .secret-dashboard.show {
+        display: block;
+      }
+      .secret-dashboard h2 {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 14px;
+        color: #eecf8f;
+        letter-spacing: 0.08em;
+        margin-bottom: 16px;
+        border-bottom: 1px solid rgba(238, 207, 143, 0.1);
+        padding-bottom: 10px;
+      }
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .dashboard-item {
+        background: rgba(255,255,255,0.03);
+        border-radius: 10px;
+        padding: 12px 14px;
+        border: 1px solid rgba(255,255,255,0.04);
+      }
+      .dashboard-item .label {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #6a5a6a;
+      }
+      .dashboard-item .value {
+        font-size: 13px;
+        font-weight: 500;
+        color: #d6c9d6;
+        margin-top: 4px;
+      }
+      .dashboard-item .value .pending { color: #e8829f; }
+      .dashboard-item .value .done { color: #8fd0a5; }
+      .dashboard-item .value .yes { color: #eecf8f; font-weight: 700; }
+      .dashboard-timestamp {
+        font-size: 10px;
+        color: #6a5a6a;
+        font-family: 'JetBrains Mono', monospace;
+        margin-top: 12px;
+        text-align: right;
+      }
+      .dashboard-refresh {
+        background: rgba(238, 207, 143, 0.1);
+        border: 1px solid rgba(238, 207, 143, 0.15);
+        border-radius: 30px;
+        padding: 4px 14px;
+        color: #eecf8f;
+        font: 10px 'JetBrains Mono', monospace;
+        cursor: pointer;
+        float: right;
+      }
+      .dashboard-refresh:hover {
+        background: rgba(238, 207, 143, 0.2);
+      }
+
+      /* ---------- WELCOME PAGE ---------- */
+      .welcome-page {
+        animation: fadeUp 1s ease forwards;
+        opacity: 0;
+        transform: translateY(30px);
+        text-align: center;
+        padding: 20px 0 30px;
+      }
+
+      .welcome-page.hidden {
+        display: none;
+      }
+
+      @keyframes fadeUp {
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .badge {
+        display: inline-block;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: #e8829f;
+        background: rgba(232, 130, 159, 0.08);
+        border: 1px solid rgba(232, 130, 159, 0.15);
+        border-radius: 40px;
+        padding: 8px 22px;
+        margin-bottom: 28px;
+        backdrop-filter: blur(4px);
+      }
+      .badge span { color: #eecf8f; }
+
+      .headline {
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: clamp(52px, 12vw, 88px);
+        line-height: 1.05;
+        letter-spacing: -0.02em;
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, #fcf5f0 20%, #eecf8f 55%, #e8829f 85%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 0 80px rgba(232, 130, 159, 0.2);
+      }
+      .headline .warning-icon {
+        display: inline-block;
+        -webkit-text-fill-color: initial;
+        background: none;
+        color: #e8829f;
+        font-size: clamp(48px, 10vw, 72px);
+        margin-right: 8px;
+      }
+
+      .sub-headline {
+        font-size: clamp(15px, 2.2vw, 20px);
+        color: #d6c9d6;
+        opacity: 0.85;
+        max-width: 42ch;
+        margin: 0 auto 24px;
+        font-weight: 400;
+        line-height: 1.6;
+        letter-spacing: 0.01em;
+      }
+      .sub-headline span {
+        color: #eecf8f;
+        font-weight: 500;
+      }
+
+      .countdown {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 14px;
+        color: #e8829f;
+        background: rgba(232, 130, 159, 0.06);
+        border: 1px solid rgba(232, 130, 159, 0.12);
+        border-radius: 40px;
+        padding: 10px 28px;
+        display: inline-block;
+        margin-bottom: 28px;
+        letter-spacing: 0.04em;
+      }
+      .countdown .number {
+        color: #eecf8f;
+        font-weight: 700;
+        font-size: 18px;
+      }
+
+      .warning-box {
+        display: inline-block;
+        padding: 14px 32px;
+        background: rgba(232, 130, 159, 0.06);
+        border: 1px solid rgba(232, 130, 159, 0.2);
+        border-radius: 16px;
+        margin-bottom: 34px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 14px;
+        letter-spacing: 0.04em;
+        color: #e8829f;
+        backdrop-filter: blur(4px);
+      }
+      .warning-box .exclamation {
+        color: #eecf8f;
+        font-weight: 700;
+        font-size: 18px;
+      }
+
+      .enter-btn {
+        display: inline-block;
+        padding: 16px 56px;
+        border-radius: 60px;
+        border: none;
+        background: linear-gradient(135deg, #eecf8f, #d9b25f);
+        color: #1a0f18;
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: 18px;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 12px 40px -12px rgba(217, 178, 95, 0.4);
+        text-decoration: none;
+      }
+      .enter-btn:hover {
+        transform: translateY(-3px) scale(1.01);
+        box-shadow: 0 20px 50px -12px rgba(217, 178, 95, 0.6);
+      }
+      .enter-btn:active {
+        transform: scale(0.98);
+      }
+
+      .footer-note {
+        margin-top: 28px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        color: #6a5a6a;
+        letter-spacing: 0.06em;
+      }
+      .footer-note span { color: #a08aa8; }
+
+      /* ---------- DATE PLANNER ---------- */
+      .date-planner {
+        display: none;
+        animation: fadeUp 0.8s ease forwards;
+      }
+      .date-planner.show {
+        display: block;
+      }
+
+      .terminal {
+        background: #0e0a13;
+        border: 1px solid rgba(218, 190, 140, 0.15);
+        border-radius: 14px;
+        padding: 18px 22px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px;
+        line-height: 1.9;
+        box-shadow: 0 20px 50px -20px #000000cc;
+        margin-bottom: 24px;
+      }
+      .terminal .dots { display: flex; gap: 8px; margin-bottom: 14px; }
+      .terminal .dot { width: 11px; height: 11px; border-radius: 50%; }
+      .dot.r { background: #e8829f; }
+      .dot.y { background: #d9b25f; }
+      .dot.g { background: #8fd0a5; }
+      .term-line { color: #c6b3d6; }
+      .term-line .path { color: #eecf8f; }
+      .term-line .ok { color: #8fd0a5; }
+      .cursor {
+        display: inline-block;
+        width: 7px;
+        height: 16px;
+        background: #d9b25f;
+        vertical-align: -3px;
+        animation: blink 1s step-end infinite;
+      }
+      @keyframes blink { 50% { opacity: 0; } }
+
+      .card {
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.8s ease, transform 0.8s ease;
+      }
+      .card.show { opacity: 1; transform: translateY(0); }
+
+      .invite {
+        background: linear-gradient(145deg, #261b30, #1a1122);
+        border: 1px solid rgba(218, 190, 140, 0.2);
+        border-radius: 28px;
+        padding: 34px 28px 28px;
+        position: relative;
+        backdrop-filter: blur(2px);
+        box-shadow: 0 25px 60px -20px #000000;
+      }
+      .invite::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 90% 10%, rgba(232, 130, 159, 0.12), transparent 60%);
+        pointer-events: none;
+        border-radius: 28px;
+      }
+
+      /* ---------- STATUS DASHBOARD ---------- */
+      .status-dashboard {
+        background: rgba(20, 14, 27, 0.8);
+        border: 1px solid rgba(218, 190, 140, 0.15);
+        border-radius: 16px;
+        padding: 18px 20px;
+        margin-bottom: 20px;
+        backdrop-filter: blur(6px);
+        font-family: 'JetBrains Mono', monospace;
+      }
+      .status-dashboard .status-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .status-dashboard .status-title {
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #a08aa8;
+      }
+      .status-dashboard .status-badge {
+        padding: 4px 14px;
+        border-radius: 40px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+      }
+      .status-badge.not-viewed {
+        background: rgba(232, 130, 159, 0.15);
+        color: #e8829f;
+        border: 1px solid rgba(232, 130, 159, 0.2);
+      }
+      .status-badge.viewed {
+        background: rgba(142, 208, 165, 0.15);
+        color: #8fd0a5;
+        border: 1px solid rgba(142, 208, 165, 0.2);
+      }
+      .status-badge.yes {
+        background: rgba(217, 178, 95, 0.2);
+        color: #eecf8f;
+        border: 1px solid rgba(217, 178, 95, 0.3);
+      }
+
+      .status-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+      }
+      .status-item {
+        background: rgba(255,255,255,0.02);
+        border-radius: 10px;
+        padding: 10px 12px;
+        border: 1px solid rgba(255,255,255,0.04);
+      }
+      .status-item .label {
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #6a5a6a;
+        margin-bottom: 4px;
+      }
+      .status-item .value {
+        font-size: 13px;
+        font-weight: 500;
+        color: #d6c9d6;
+      }
+
+      .eyebrow {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        letter-spacing: 0.1em;
+        color: #eecf8f;
+        opacity: 0.8;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .eyebrow span { color: #e8829f; }
+
+      h1 {
+        font-family: 'Playfair Display', serif;
+        font-weight: 600;
+        font-size: 32px;
+        line-height: 1.2;
+        margin: 8px 0 10px;
+        color: #fcf5f0;
+      }
+      h1 em { font-style: italic; color: #e8829f; font-weight: 500; }
+
+      .sub {
+        font-size: 14px;
+        opacity: 0.8;
+        line-height: 1.6;
+        margin-bottom: 20px;
+        font-style: italic;
+        color: #d6c9d6;
+        letter-spacing: 0.02em;
+      }
+
+      .section-label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10.5px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #d9b25f;
+        opacity: 0.7;
+        margin-bottom: 8px;
+        margin-top: 6px;
+      }
+
+      .date-picker {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 16px;
+        background: #140e1b;
+        border-radius: 16px;
+        padding: 12px 16px;
+        border: 1px solid rgba(255,255,255,0.04);
+        align-items: center;
+      }
+      .date-picker select {
+        background: #1e1428;
+        border: 1px solid #3a2a44;
+        border-radius: 30px;
+        padding: 6px 16px;
+        color: #f2ebe6;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        outline: none;
+        cursor: pointer;
+      }
+      .date-picker select option { background: #1a1122; }
+      .date-picker label {
+        font-size: 12px;
+        opacity: 0.6;
+        font-family: 'JetBrains Mono', monospace;
+        margin-right: 2px;
+      }
+
+      .time-picker {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        background: #140e1b;
+        border-radius: 40px;
+        padding: 8px 16px;
+        margin-bottom: 22px;
+        border: 1px solid rgba(255,255,255,0.04);
+      }
+      .time-picker label { font-size: 12px; opacity: 0.6; font-family: 'JetBrains Mono', monospace; }
+      .time-picker select {
+        background: #1e1428;
+        border: 1px solid #3a2a44;
+        border-radius: 30px;
+        padding: 6px 14px;
+        color: #f2ebe6;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        outline: none;
+        cursor: pointer;
+      }
+      .time-picker select option { background: #1a1122; }
+
+      .vibe-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .vibe {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        padding: 8px 15px;
+        border-radius: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.02);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        color: #ddd0d0;
+      }
+      .vibe.active {
+        background: #e8829f;
+        border-color: #e8829f;
+        color: #1a0f20;
+        font-weight: 600;
+      }
+
+      .place-selector {
+        background: #140e1b;
+        border: 1px solid rgba(255,255,255,0.05);
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 22px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-height: 54px;
+        transition: all 0.2s ease;
+      }
+      .place-selector.hidden {
+        opacity: 0.3;
+        pointer-events: none;
+      }
+      .place-selector .place-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .place-selector select {
+        background: #1e1428;
+        border: 1px solid #3a2a44;
+        border-radius: 30px;
+        padding: 6px 16px 6px 12px;
+        color: #f2ebe6;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        outline: none;
+        cursor: pointer;
+        flex: 1;
+        min-width: 140px;
+      }
+      .place-selector select option { background: #1a1122; }
+      .place-selector .custom-place-input {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 2;
+        min-width: 160px;
+      }
+      .place-selector .custom-place-input input {
+        background: #1e1428;
+        border: 1px solid #3a2a44;
+        border-radius: 30px;
+        padding: 6px 14px;
+        color: #f2ebe6;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        outline: none;
+        flex: 1;
+        min-width: 120px;
+      }
+      .place-selector .custom-place-input input::placeholder {
+        color: #6a5a6a;
+        opacity: 0.6;
+      }
+      .place-selector .custom-place-input button {
+        background: #d9b25f;
+        border: none;
+        border-radius: 30px;
+        padding: 6px 16px;
+        color: #1a0f18;
+        font-weight: 600;
+        font-size: 12px;
+        cursor: pointer;
+        transition: background 0.15s;
+        white-space: nowrap;
+      }
+      .place-selector .custom-place-input button:hover {
+        background: #eecf8f;
+      }
+
+      .cta {
+        width: 100%;
+        padding: 16px;
+        border: none;
+        border-radius: 40px;
+        background: linear-gradient(135deg, #eecf8f, #d9b25f);
+        color: #1a0f18;
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: 17px;
+        letter-spacing: 0.3px;
+        cursor: pointer;
+        box-shadow: 0 12px 28px -12px #d9b25f77;
+        transition: all 0.2s ease;
+      }
+      .cta:hover:not(:disabled) { transform: scale(1.01); box-shadow: 0 16px 36px -10px #d9b25faa; }
+      .cta:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+      .hint {
+        font-size: 11px;
+        font-family: 'JetBrains Mono', monospace;
+        opacity: 0.5;
+        text-align: center;
+        margin-top: 12px;
+      }
+
+      .confirm {
+        display: none;
+        text-align: center;
+        padding: 8px 0 0;
+      }
+      .confirm.show { display: block; }
+      .stamp {
+        width: 64px; height: 64px;
+        background: radial-gradient(circle at 30% 30%, #eecf8f, #d9b25f);
+        border-radius: 50%;
+        margin: 0 auto 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        box-shadow: 0 0 0 6px #d9b25f20;
+      }
+      .confirm h2 { font-family: 'Playfair Display', serif; font-size: 28px; }
+      .receipt {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        background: #110c17;
+        border: 1px solid #2a1e33;
+        border-radius: 14px;
+        padding: 18px 20px;
+        text-align: left;
+        line-height: 2.2;
+        color: #d6c9d6;
+      }
+      .receipt .k { color: #e8829f; }
+      .receipt .v { color: #eecf8f; }
+      .confirm-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      .confirm-action {
+        padding: 11px 10px;
+        border: 1px solid rgba(238, 207, 143, 0.35);
+        border-radius: 12px;
+        background: transparent;
+        color: #eecf8f;
+        font: 600 12px 'JetBrains Mono', monospace;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .confirm-action:hover { background: rgba(238, 207, 143, 0.1); }
+      .confirm-action.maps {
+        border-color: rgba(66, 133, 244, 0.4);
+        color: #4285f4;
+        grid-column: span 2;
+      }
+      .confirm-action.maps:hover {
+        background: rgba(66, 133, 244, 0.08);
+      }
+      .confirm-action.back {
+        border-color: rgba(232, 130, 159, 0.3);
+        color: #e8829f;
+        grid-column: span 2;
+      }
+      .confirm-action.back:hover {
+        background: rgba(232, 130, 159, 0.08);
+      }
+
+      .form-view { display: block; }
+      .form-view.hide { display: none; }
+
+      .truth-section {
+        margin: 20px 0 16px;
+        background: #140e1b;
+        border-radius: 20px;
+        padding: 18px 16px 16px;
+        border: 1px solid rgba(255,255,255,0.03);
+        text-align: center;
+      }
+      .truth-section p {
+        font-family: 'Playfair Display', serif;
+        font-size: 20px;
+        font-style: italic;
+        color: #f0dccf;
+        margin-bottom: 14px;
+      }
+      .truth-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        position: relative;
+        min-height: 56px;
+      }
+      .truth-btn {
+        padding: 10px 34px;
+        border-radius: 60px;
+        border: none;
+        font-weight: 600;
+        font-size: 17px;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+        transition: all 0.15s ease;
+        background: #2a1e33;
+        color: #ddd0d0;
+        border: 1px solid transparent;
+        min-width: 100px;
+      }
+      .truth-btn.yes {
+        background: #d9b25f;
+        color: #0f0914;
+        font-weight: 700;
+        box-shadow: 0 6px 18px #d9b25f44;
+      }
+      .truth-btn.yes:hover { background: #ecc77a; transform: scale(1.02); }
+      .truth-btn.no {
+        background: #2f1f2b;
+        color: #b8a0a8;
+        border-color: #5a3f4a;
+        position: relative;
+        transition: all 0.08s linear;
+      }
+      .truth-btn.no.dodge {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+
+      /* ---------- TRADEMARK FOOTER ---------- */
+      .trademark-footer {
+        margin-top: 28px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(238, 207, 143, 0.08);
+        text-align: center;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        color: #6a5a6a;
+      }
+      .trademark-footer .tm {
+        color: #a08aa8;
+      }
+      .trademark-footer .heart {
+        color: #e8829f;
+      }
+
+      @media (max-width: 480px) {
+        .sound-toggle { top: -8px; right: 6px; }
+        .truth-buttons { gap: 16px; flex-wrap: wrap; }
+        .truth-btn { min-width: 80px; padding: 8px 20px; }
+        .date-picker { flex-direction: column; align-items: stretch; gap: 8px; }
+        .place-selector .place-row { flex-direction: column; align-items: stretch; }
+        .place-selector .custom-place-input { flex-wrap: wrap; }
+        .enter-btn { padding: 14px 40px; font-size: 16px; width: 100%; }
+        .warning-box { font-size: 12px; padding: 12px 20px; }
+        .status-grid { grid-template-columns: 1fr 1fr; }
+        .confirm-actions { grid-template-columns: 1fr; }
+        .dashboard-grid { grid-template-columns: 1fr; }
+        .confirm-action.maps { grid-column: span 1; }
+        .confirm-action.back { grid-column: span 1; }
+      }
+    </style>
+</head>
+<body>
+
+<div class="stage">
+  <button class="sound-toggle" id="soundBtn" type="button" aria-pressed="false">♪ sound off</button>
+  
+  <!-- ===== SECRET DASHBOARD ===== -->
+  <div class="secret-dashboard" id="secretDashboard">
+    <h2>
+      📊 LIVE TRACKING · RADHIA
+      <button class="dashboard-refresh" id="refreshBtn">↻ refresh</button>
+    </h2>
+    <div class="dashboard-grid">
+      <div class="dashboard-item">
+        <div class="label">📄 page viewed</div>
+        <div class="value"><span id="dashPage" class="pending">⏳ pending</span></div>
+      </div>
+      <div class="dashboard-item">
+        <div class="label">💛 said yes</div>
+        <div class="value"><span id="dashYes" class="pending">⏳ waiting</span></div>
+      </div>
+      <div class="dashboard-item">
+        <div class="label">🎯 vibe selected</div>
+        <div class="value"><span id="dashVibe" class="pending">⏳ waiting</span></div>
+      </div>
+      <div class="dashboard-item">
+        <div class="label">📍 place chosen</div>
+        <div class="value"><span id="dashPlace" class="pending">⏳ waiting</span></div>
+      </div>
+      <div class="dashboard-item" style="grid-column: span 2;">
+        <div class="label">📅 date confirmed</div>
+        <div class="value"><span id="dashConfirm" class="pending">⏳ waiting</span></div>
+      </div>
+    </div>
+    <div class="dashboard-timestamp" id="dashTimestamp">Last update: —</div>
+  </div>
+
+  <!-- ===== WELCOME PAGE ===== -->
+  <div class="welcome-page" id="welcomePage">
+    <div class="badge">✦ a little <span>·</span> invitation</div>
+    <h1 class="headline">
+      a little<br />question
+    </h1>
+    <p class="sub-headline">
+      <span>✨</span> some evenings are better when shared · ready for one? <span>✨</span>
+    </p>
+    <div class="countdown">
+      <span class="number">one</span> small question · one beautiful possibility
+    </div>
+    <div class="warning-box">
+      <span class="exclamation">♥</span> caution: may lead to butterflies
+    </div>
+    <button class="enter-btn" id="enterBtn">open the invitation →</button>
+    <div class="footer-note">
+      <span>✦</span> made with a little courage <span>✦</span>
+    </div>
+  </div>
+
+  <!-- ===== DATE PLANNER ===== -->
+  <div class="date-planner" id="datePlanner">
+    <div class="terminal">
+      <div class="dots"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span></div>
+      <div id="termOutput"></div>
+    </div>
+
+    <div class="card" id="card">
+      <div class="invite">
+        <div class="eyebrow">◈ a little invitation · dar <span>// just for you</span></div>
+
+        <div class="form-view" id="formView">
+          <h1>Can we go for a <em>date?</em></h1>
+          <p class="sub">no pressure — just a small hope for a lovely moment together</p>
+
+          <div class="status-dashboard" id="statusDashboard">
+            <div class="status-header">
+              <span class="status-title">your date plan</span>
+              <span class="status-badge not-viewed" id="viewStatusBadge">in progress</span>
+            </div>
+            <div class="status-grid">
+              <div class="status-item">
+                <div class="label">your answer</div>
+                <div class="value"><span id="pageViewed" class="pending">not chosen</span></div>
+              </div>
+              <div class="status-item">
+                <div class="label">date & time</div>
+                <div class="value"><span id="yesStatus" class="pending">not set</span></div>
+              </div>
+              <div class="status-item">
+                <div class="label">vibe</div>
+                <div class="value"><span id="vibeStatus" class="pending">not chosen</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="truth-section" id="truthSection">
+            <p>if it feels right, would you say yes?</p>
+            <div class="truth-buttons" id="truthButtons">
+              <button class="truth-btn yes" id="yesBtn">yes</button>
+              <button class="truth-btn no" id="noBtn">no</button>
+            </div>
+          </div>
+
+          <div class="section-label">// pick a date</div>
+          <div class="date-picker" id="datePicker">
+            <label>📅</label>
+            <select id="daySelect"></select>
+            <select id="monthSelect">
+              <option value="0">January</option><option value="1">February</option>
+              <option value="2">March</option><option value="3">April</option>
+              <option value="4">May</option><option value="5">June</option>
+              <option value="6">July</option><option value="7">August</option>
+              <option value="8">September</option><option value="9">October</option>
+              <option value="10">November</option><option value="11">December</option>
+            </select>
+            <select id="yearSelect">
+              <option value="2025">2025</option>
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+              <option value="2028">2028</option>
+            </select>
+          </div>
+
+          <div class="time-picker">
+            <label>⏱️ time</label>
+            <select id="hourSelect">
+              <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+              <option value="13">13</option><option value="14">14</option><option value="15">15</option>
+              <option value="16">16</option><option value="17">17</option><option value="18">18</option>
+              <option value="19">19</option><option value="20">20</option><option value="21">21</option>
+              <option value="22">22</option>
+            </select>
+            <span>:</span>
+            <select id="minuteSelect">
+              <option value="00">00</option><option value="15">15</option><option value="30">30</option><option value="45">45</option>
+            </select>
+          </div>
+
+          <div class="section-label">// pick a vibe</div>
+          <div class="vibe-row" id="vibes">
+            <div class="vibe" data-vibe="dinner">🍝 Dinner</div>
+            <div class="vibe" data-vibe="coffee">☕ Coffee</div>
+            <div class="vibe" data-vibe="walk">🌇 Walk + sunset</div>
+            <div class="vibe" data-vibe="beach">🌊 Beach</div>
+            <div class="vibe" data-vibe="icecream">🍦 Ice cream</div>
+            <div class="vibe" data-vibe="library">📚 Library</div>
+            <div class="vibe" data-vibe="cinema">🎬 Cinema</div>
+            <div class="vibe" data-vibe="home">🏠 At home</div>
+          </div>
+
+          <div class="place-selector" id="placeSelector">
+            <div class="place-row">
+              <span style="opacity:0.7;" id="placeLabel">📍 choose spot</span>
+              <select id="placeSelect">
+                <option value="">— select a vibe first —</option>
+              </select>
+            </div>
+            <div class="place-row custom-place-input">
+              <input type="text" id="customPlaceInput" placeholder="or type any place..." />
+              <button id="customPlaceBtn">➕ add</button>
+            </div>
+          </div>
+
+          <button class="cta" id="ctaBtn" disabled>confirm our little plan</button>
+          <div class="hint" id="hintText">say yes + pick a vibe + choose a place</div>
+        </div>
+
+        <div class="confirm" id="confirmView">
+          <div class="stamp">💛</div>
+          <h2>It's a date.</h2>
+          <p>A little yes can become a beautiful memory.</p>
+          <div class="receipt" id="receipt"></div>
+          
+          <!-- ===== GOOGLE MAPS & SHARE ACTIONS ===== -->
+          <div class="confirm-actions">
+            <button class="confirm-action" id="shareBtn" type="button">📤 share plan</button>
+            <button class="confirm-action" id="calendarBtn" type="button">📅 calendar</button>
+          </div>
+          
+          <!-- ===== GOOGLE MAPS (Full width) ===== -->
+          <div style="margin-top: 14px; display: grid; grid-template-columns: 1fr; gap: 10px;">
+            <button class="confirm-action maps" id="googleMapsBtn" type="button">
+              🗺️ Show me the exact location on Google Maps
+            </button>
+          </div>
+          
+          <!-- ===== GO BACK BUTTON ===== -->
+          <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr; gap: 10px;">
+            <button class="confirm-action back" id="goBackBtn" type="button">
+              ↩️ Go Back · Change Plan
+            </button>
+          </div>
+          
+          <div style="margin-top: 18px; font-size: 13px; color: #eecf8f; border-top: 1px solid #2a1e33; padding-top: 14px;">
+            ✦ Dar es Salaam · the next chapter starts here ✦
+          </div>
+        </div>
+
+        <!-- ===== TRADEMARK FOOTER ===== -->
+        <div class="trademark-footer">
+          <span class="tm">© 2026 NOIR</span>
+          <span class="heart"> ♥ </span>
+          <span>All Rights Reserved.</span>
+          <br />
+          <span style="font-size: 9px; opacity: 0.5;">
+            made with a little courage · dar es salaam
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<canvas id="celebrationCanvas" aria-hidden="true"></canvas>
+
+<script>
+// ============================================================
+//  CONFIGURATION - REAL-TIME TRACKING WITH FORMSPREE
+// ============================================================
+
+// Check if the URL has ?sender=mido parameter
+const senderParam = new URLSearchParams(window.location.search).get('sender');
+const RESPONSE_ENDPOINTS = senderParam === 'mido'
+    ? [
+        'https://formspree.io/f/mpqveqor', // your email
+        'https://formspree.io/f/xqeroykk', // mido's email
+      ]
+    : [
+        'https://formspree.io/f/mpqveqor', // your email (default - only you)
+      ];
+
+const CONFIG = {
+    RESPONSE_ENDPOINTS: RESPONSE_ENDPOINTS,
+    TRACKING_ENDPOINT: 'https://formspree.io/f/mpqveqor',
+    DASHBOARD_SECRET: 'secret'
+};
+
+console.log('📊 Active response endpoints:', CONFIG.RESPONSE_ENDPOINTS);
+console.log('📡 Tracking endpoint:', CONFIG.TRACKING_ENDPOINT);
+
+// ============================================================
+//  REAL-TIME TRACKING ENGINE
+// ============================================================
+
+let trackingData = {
+    pageViewed: false,
+    yesClicked: false,
+    vibeSelected: null,
+    placeSelected: null,
+    dateConfirmed: null,
+    lastUpdate: null
+};
+
+async function trackStep(step, data = {}) {
+    const timestamp = new Date().toISOString();
+    const payload = {
+        step: step,
+        data: data,
+        timestamp: timestamp,
+        userAgent: navigator.userAgent,
+        referrer: document.referrer || 'direct'
+    };
+
+    if (step === 'page_viewed') trackingData.pageViewed = true;
+    if (step === 'yes_clicked') trackingData.yesClicked = true;
+    if (step === 'vibe_selected') trackingData.vibeSelected = data.vibe;
+    if (step === 'place_selected') trackingData.placeSelected = data.place;
+    if (step === 'date_confirmed') trackingData.dateConfirmed = data.details;
+    trackingData.lastUpdate = timestamp;
+
+    updateSecretDashboard();
+
+    try {
+        await fetch(CONFIG.TRACKING_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+    } catch (error) {
+        console.warn('⚠️ Tracking error:', error);
+    }
+
+    if (step === 'date_confirmed') {
+        sendFinalResponse(data);
+    }
+}
+
+async function sendFinalResponse(data) {
+    const activeEndpoints = CONFIG.RESPONSE_ENDPOINTS.filter(url => url && url.includes('formspree.io/f/'));
+    if (activeEndpoints.length === 0) return;
+
+    const payload = {
+        response: 'yes',
+        date: data.date,
+        time: data.time,
+        vibe: data.vibe,
+        place: data.place,
+        confirmed_at: new Date().toISOString()
+    };
+
+    for (const endpoint of activeEndpoints) {
+        try {
+            await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } catch (error) {
+            console.warn('⚠️ Failed to send to:', endpoint);
+        }
+    }
+}
+
+// ============================================================
+//  SECRET DASHBOARD
+// ============================================================
+function updateSecretDashboard() {
+    const dashPage = document.getElementById('dashPage');
+    const dashYes = document.getElementById('dashYes');
+    const dashVibe = document.getElementById('dashVibe');
+    const dashPlace = document.getElementById('dashPlace');
+    const dashConfirm = document.getElementById('dashConfirm');
+    const dashTimestamp = document.getElementById('dashTimestamp');
+
+    dashPage.textContent = trackingData.pageViewed ? '✅ viewed' : '⏳ pending';
+    dashPage.className = trackingData.pageViewed ? 'done' : 'pending';
+
+    dashYes.textContent = trackingData.yesClicked ? '💛 YES!' : '⏳ waiting';
+    dashYes.className = trackingData.yesClicked ? 'yes' : 'pending';
+
+    dashVibe.textContent = trackingData.vibeSelected ? `🎯 ${trackingData.vibeSelected}` : '⏳ waiting';
+    dashVibe.className = trackingData.vibeSelected ? 'done' : 'pending';
+
+    dashPlace.textContent = trackingData.placeSelected ? `📍 ${trackingData.placeSelected}` : '⏳ waiting';
+    dashPlace.className = trackingData.placeSelected ? 'done' : 'pending';
+
+    dashConfirm.textContent = trackingData.dateConfirmed ? `✅ ${trackingData.dateConfirmed}` : '⏳ waiting';
+    dashConfirm.className = trackingData.dateConfirmed ? 'done' : 'pending';
+
+    dashTimestamp.textContent = trackingData.lastUpdate 
+        ? `Last update: ${new Date(trackingData.lastUpdate).toLocaleString()}`
+        : 'Last update: —';
+}
+
+function showDashboard() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('dashboard') === CONFIG.DASHBOARD_SECRET) {
+        document.getElementById('secretDashboard').classList.add('show');
+        return true;
+    }
+    return false;
+}
+
+document.getElementById('refreshBtn')?.addEventListener('click', () => {
+    updateSecretDashboard();
+    document.getElementById('dashTimestamp').textContent += ' (refreshed)';
+});
+
+// ============================================================
+//  DOUCEMENT MUSIC (65% volume)
+// ============================================================
+let musicPlaying = false;
+let audioPlayer;
+const soundBtn = document.getElementById('soundBtn');
+
+const AUDIO_URL = 'doucement.mp3';
+const MUSIC_VOLUME = 0.65;
+
+async function startMusic() {
+    if (musicPlaying) return;
+
+    try {
+    if (!audioPlayer) {
+      audioPlayer = new Audio(AUDIO_URL);
+      audioPlayer.loop = true;
+      audioPlayer.preload = 'auto';
+      audioPlayer.volume = MUSIC_VOLUME;
+    }
+
+    await audioPlayer.play();
+        musicPlaying = true;
+        soundBtn.textContent = '🎵 Marioo · Doucement';
+        soundBtn.setAttribute('aria-pressed', 'true');
+        soundBtn.classList.add('playing');
+
+    console.log('Doucement.mp3 playing at 65% volume');
+    } catch (error) {
+    console.warn('Could not play Doucement.mp3:', error);
+    soundBtn.textContent = '♪ play music';
+    }
+}
+
+function stopMusic() {
+  if (audioPlayer) {
+    audioPlayer.pause();
+    audioPlayer.currentTime = 0;
+    }
+    musicPlaying = false;
+    soundBtn.textContent = '♪ sound off';
+    soundBtn.setAttribute('aria-pressed', 'false');
+    soundBtn.classList.remove('playing');
+}
+
+soundBtn.addEventListener('click', () => {
+    if (musicPlaying) stopMusic();
+    else startMusic();
+});
+
+// ============================================================
+//  GOOGLE MAPS WITH LOCATION
+// ============================================================
+let userLocation = null;
+
+function getLocation() {
+    return new Promise((resolve) => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    resolve(userLocation);
+                },
+                () => {
+                    resolve(null);
+                }
+            );
+        } else {
+            resolve(null);
+        }
+    });
+}
+
+document.getElementById('googleMapsBtn')?.addEventListener('click', async () => {
+    let place = chosenPlace || 'Dar es Salaam';
+    
+    // If "Home" vibe is selected, try to get user's location
+    if (chosenVibe === 'home') {
+        const location = await getLocation();
+        if (location) {
+            // Open Google Maps with directions from user's location to the recipient's address
+            // Using the recipient's address (you can set this)
+            const recipientAddress = 'Dar es Salaam, Tanzania'; // Change this to actual address
+            const mapsUrl = `https://www.google.com/maps/dir/${location.lat},${location.lng}/${encodeURIComponent(recipientAddress)}`;
+            window.open(mapsUrl, '_blank');
+            trackStep('google_maps_directions', { from: 'user_location', to: recipientAddress });
+            return;
+        } else {
+            // Fallback if location not available
+            const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(place)}`;
+            window.open(mapsUrl, '_blank');
+            trackStep('google_maps_search', { place: place });
+            return;
+        }
+    }
+    
+    // For non-home vibes, just search the place
+    const encodedPlace = encodeURIComponent(place);
+    const mapsUrl = `https://www.google.com/maps/search/${encodedPlace}`;
+    window.open(mapsUrl, '_blank');
+    trackStep('google_maps_search', { place: place });
+});
+
+// ============================================================
+//  GO BACK BUTTON
+// ============================================================
+document.getElementById('goBackBtn')?.addEventListener('click', () => {
+    document.getElementById('confirmView').classList.remove('show');
+    document.getElementById('formView').classList.remove('hide');
+    document.getElementById('card').scrollIntoView({ behavior: 'smooth' });
+    trackStep('go_back_clicked', { timestamp: new Date().toISOString() });
+});
+
+// ============================================================
+//  CELEBRATION CANVAS
+// ============================================================
+const celebrationCanvas = document.getElementById('celebrationCanvas');
+const celebrationContext = celebrationCanvas.getContext('2d');
+function resizeCelebrationCanvas() {
+    celebrationCanvas.width = window.innerWidth * window.devicePixelRatio;
+    celebrationCanvas.height = window.innerHeight * window.devicePixelRatio;
+    celebrationContext.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+}
+window.addEventListener('resize', resizeCelebrationCanvas);
+resizeCelebrationCanvas();
+
+function celebrateYes() {
+    const colors = ['#eecf8f', '#e8829f', '#fcf5f0', '#d9b25f', '#f5b7c8'];
+    const particles = Array.from({ length: 120 }, (_, index) => ({
+        x: window.innerWidth * (0.22 + Math.random() * 0.56),
+        y: window.innerHeight * (0.2 + Math.random() * 0.28),
+        vx: (Math.random() - 0.5) * 11,
+        vy: -3 - Math.random() * 10,
+        gravity: 0.18 + Math.random() * 0.08,
+        rotation: Math.random() * Math.PI * 2,
+        rotationSpeed: (Math.random() - 0.5) * 0.28,
+        size: 5 + Math.random() * 8,
+        color: colors[index % colors.length],
+        heart: index % 5 === 0
+    }));
+    const started = performance.now();
+    document.body.classList.add('celebrating');
+    function frame(now) {
+        const elapsed = now - started;
+        celebrationContext.clearRect(0, 0, window.innerWidth, window.innerHeight);
+        particles.forEach(particle => {
+            particle.x += particle.vx;
+            particle.y += particle.vy;
+            particle.vy += particle.gravity;
+            particle.rotation += particle.rotationSpeed;
+            celebrationContext.save();
+            celebrationContext.globalAlpha = Math.max(0, 1 - elapsed / 2800);
+            celebrationContext.translate(particle.x, particle.y);
+            celebrationContext.rotate(particle.rotation);
+            celebrationContext.fillStyle = particle.color;
+            if (particle.heart) {
+                celebrationContext.font = `${particle.size + 8}px serif`;
+                celebrationContext.fillText('♥', -particle.size / 2, particle.size / 2);
+            } else {
+                celebrationContext.fillRect(-particle.size / 2, -particle.size / 3, particle.size, particle.size * 0.66);
+            }
+            celebrationContext.restore();
+        });
+        if (elapsed < 2800) requestAnimationFrame(frame);
+        else {
+            celebrationContext.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            document.body.classList.remove('celebrating');
+        }
+    }
+    requestAnimationFrame(frame);
+}
+
+// ============================================================
+//  UPDATE PROGRESS UI
+// ============================================================
+function updateProgress(eventName, label = '') {
+    const pageViewed = document.getElementById('pageViewed');
+    const yesStatus = document.getElementById('yesStatus');
+    const vibeStatus = document.getElementById('vibeStatus');
+    const viewBadge = document.getElementById('viewStatusBadge');
+
+    switch(eventName) {
+        case 'yes_clicked':
+            pageViewed.innerHTML = 'yes';
+            pageViewed.className = 'done';
+            yesStatus.innerHTML = 'choose a time';
+            yesStatus.className = 'pending';
+            viewBadge.textContent = 'nice choice';
+            viewBadge.className = 'status-badge yes';
+            break;
+
+        case 'vibe_selected':
+            vibeStatus.innerHTML = label;
+            vibeStatus.className = 'done';
+            break;
+    }
+}
+
+// ============================================================
+//  WELCOME PAGE LOGIC
+// ============================================================
+document.getElementById('enterBtn').addEventListener('click', () => {
+    trackStep('page_viewed', { 
+        entry: 'welcome_click',
+        time_on_welcome: performance.now()
+    });
+    
+    startMusic();
+    
+    document.getElementById('welcomePage').classList.add('hidden');
+    document.getElementById('datePlanner').classList.add('show');
+    setTimeout(typeNext, 300);
+    setTimeout(() => {
+        document.getElementById('card').classList.add('show');
+    }, 800);
+});
+
+// ============================================================
+//  TERMINAL
+// ============================================================
+const termOutput = document.getElementById('termOutput');
+const lines = [
+    { text: '$ a small thought', delay: 0 },
+    { text: 'there is someone I would love to spend time with', delay: 380 },
+    { text: 'and maybe make a beautiful little memory', delay: 380 },
+    { text: '', delay: 180 },
+    { text: '$ make a little plan', delay: 500 },
+    { text: '<span class="ok">✔</span> good conversation · a lovely place · no rush', delay: 480 },
+    { text: '', delay: 200 },
+    { text: '$ open ./invitation.html --with-heart', delay: 520 },
+];
+let lineIndex = 0;
+
+function typeNext() {
+    if (lineIndex >= lines.length) {
+        const cursor = document.createElement('span');
+        cursor.className = 'cursor';
+        termOutput.appendChild(cursor);
+        return;
+    }
+    const line = lines[lineIndex];
+    const div = document.createElement('div');
+    div.className = 'term-line';
+    div.innerHTML = line.text || '&nbsp;';
+    termOutput.appendChild(div);
+    lineIndex++;
+    setTimeout(typeNext, line.delay + 300);
+}
+
+// ============================================================
+//  DATE PLANNER LOGIC
+// ============================================================
+const daySelect = document.getElementById('daySelect');
+for (let d = 1; d <= 31; d++) {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = d;
+    daySelect.appendChild(opt);
+}
+
+let yesSelected = false;
+let chosenVibe = null;
+let chosenVibeLabel = null;
+let chosenPlace = null;
+let chosenPlaceUrl = null;
+
+const ctaBtn = document.getElementById('ctaBtn');
+const hintText = document.getElementById('hintText');
+const yesBtn = document.getElementById('yesBtn');
+const noBtn = document.getElementById('noBtn');
+const truthButtons = document.getElementById('truthButtons');
+const placeSelect = document.getElementById('placeSelect');
+const placeLabel = document.getElementById('placeLabel');
+const customInput = document.getElementById('customPlaceInput');
+const customBtn = document.getElementById('customPlaceBtn');
+
+const placesData = {
+    dinner: [
+        { name: 'Mamboz Corner (Masaki)', url: 'https://www.google.com/maps/search/Mamboz+Corner+Dar+es+Salaam' },
+        { name: 'The Waterfront (Slipway)', url: 'https://www.google.com/maps/search/The+Waterfront+Dar+es+Salaam' },
+        { name: 'Cape Town Fish Market', url: 'https://www.google.com/maps/search/Cape+Town+Fish+Market+Dar+es+Salaam' },
+        { name: 'The Grill House (Oyster Bay)', url: 'https://www.google.com/maps/search/The+Grill+House+Dar+es+Salaam' },
+        { name: 'The Terrace (Sea Cliff)', url: 'https://www.google.com/maps/search/The+Terrace+Dar+es+Salaam' },
+        { name: 'A candlelit dinner at home', url: '' },
+    ],
+    coffee: [
+        { name: 'Coffee Culture (Mikocheni)', url: 'https://www.google.com/maps/search/Coffee+Culture+Dar+es+Salaam' },
+        { name: 'Javahouse (Masaki)', url: 'https://www.google.com/maps/search/Javahouse+Dar+es+Salaam' },
+        { name: 'Café Rooftop (City Centre)', url: 'https://www.google.com/maps/search/Café+Rooftop+Dar+es+Salaam' },
+        { name: 'The Coffee Bean (Oyster Bay)', url: 'https://www.google.com/maps/search/The+Coffee+Bean+Dar+es+Salaam' },
+        { name: 'Coffee and pastries at home', url: '' },
+    ],
+    walk: [
+        { name: 'Coco Beach (Sunset Walk)', url: 'https://www.google.com/maps/search/Coco+Beach+Dar+es+Salaam' },
+        { name: 'Slipway Boardwalk', url: 'https://www.google.com/maps/search/Slipway+Dar+es+Salaam' },
+        { name: 'Oyster Bay Promenade', url: 'https://www.google.com/maps/search/Oyster+Bay+Dar+es+Salaam' },
+        { name: 'A quiet neighbourhood walk', url: '' },
+    ],
+    beach: [
+        { name: 'Coco Beach', url: 'https://www.google.com/maps/search/Coco+Beach+Dar+es+Salaam' },
+        { name: 'Jangwani Beach', url: 'https://www.google.com/maps/search/Jangwani+Beach+Dar+es+Salaam' },
+        { name: 'Kunduchi Beach', url: 'https://www.google.com/maps/search/Kunduchi+Beach+Dar+es+Salaam' },
+        { name: 'Mbezi Beach', url: 'https://www.google.com/maps/search/Mbezi+Beach+Dar+es+Salaam' },
+        { name: 'Oyster Bay Beach', url: 'https://www.google.com/maps/search/Oyster+Bay+Beach+Dar+es+Salaam' },
+        { name: 'ledger plaza bahari beach hotel', url: 'https://www.google.com/maps/search/Ledger+Plaza+Bahari+Beach+Hotel+Dar+es+Salaam' },
+        { name:  'malaika beach club', url: 'https://www.google.com/maps/search/Malaika+Beach+Club+Dar+es+Salaam'},
+        { name: 'A sunset beach walk', url: '' },
+        { name: 'A private beach picnic', url: '' },
+    ],
+    icecream: [
+        { name: 'Gelato (Masaki)', url: 'https://www.google.com/maps/search/Gelato+Dar+es+Salaam' },
+        { name: 'Ice Cream Factory (Oyster Bay)', url: 'https://www.google.com/maps/search/Ice+Cream+Factory+Dar+es+Salaam' },
+        { name: 'Milk & Honey (Mikocheni)', url: 'https://www.google.com/maps/search/Milk+and+Honey+Dar+es+Salaam' },
+        { name: 'Dessert and music at home', url: '' },
+    ],
+    library: [
+        { name: 'Dar es Salaam Library (City Centre)', url: 'https://www.google.com/maps/search/Dar+es+Salaam+Library' },
+        { name: 'National Library of Tanzania', url: 'https://www.google.com/maps/search/National+Library+Tanzania' },
+        { name: 'British Council Library', url: 'https://www.google.com/maps/search/British+Council+Dar+es+Salaam' },
+        { name: 'Read together at home', url: '' },
+    ],
+    cinema: [
+        { name: 'Century Cinemax (Mlimani City)', url: 'https://www.google.com/maps/search/Century+Cinemax+Dar+es+Salaam' },
+        { name: 'Nu Metro (Dar es Salaam)', url: 'https://www.google.com/maps/search/Nu+Metro+Dar+es+Salaam' },
+        { name: 'Viva Cinemas (Quality Mall)', url: 'https://www.google.com/maps/search/Viva+Cinemas+Dar+es+Salaam' },
+        { name: 'Cineplex (Mikocheni)', url: 'https://www.google.com/maps/search/Cineplex+Dar+es+Salaam' },
+        { name: 'Century Cinemax (DFM)', url: 'https://www.google.com/maps/search/Century+Cinemax+DFM+Dar+es+Salaam' },
+        { name: ' century cinemax Mkuki house', url: 'https://www.google.com/maps/search/Century+Cinemax+Mkuki+House+Dar+es+Salaam'},
+        { name: 'holly wood movie house', url: 'https://www.google.com/maps/search/Hollywood+Movie+House+Dar+es+Salaam'},
+        { name: 'A movie night at home', url: '' },
+    ],
+    home: [
+        { name: 'Your place — movie and takeout', url: 'home' },
+        { name: 'My place — home-cooked dinner', url: 'home' },
+        { name: 'Cook something together', url: 'home' },
+        { name: 'Board games, music and snacks', url: 'home' },
+        { name: 'A slow evening with good conversation', url: 'home' },
+        { name: 'spend the night and the rest of the day', url: 'home' },
+    ]
+};
+
+function updatePlaces(vibeKey) {
+    const places = placesData[vibeKey] || [];
+    placeSelect.innerHTML = '<option value="">— choose a spot —</option>';
+    places.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.name;
+        opt.dataset.url = p.url;
+        opt.textContent = p.name;
+        placeSelect.appendChild(opt);
+    });
+    placeSelect.value = '';
+    chosenPlace = null;
+    chosenPlaceUrl = null;
+    document.getElementById('placeSelector').classList.remove('hidden');
+    placeLabel.textContent = `📍 ${vibeKey.charAt(0).toUpperCase() + vibeKey.slice(1)} spots`;
+}
+
+document.querySelectorAll('.vibe').forEach(el => {
+    el.addEventListener('click', () => {
+        document.querySelectorAll('.vibe').forEach(v => v.classList.remove('active'));
+        el.classList.add('active');
+        const vibeKey = el.dataset.vibe;
+        chosenVibe = vibeKey;
+        chosenVibeLabel = el.innerText.trim();
+        
+        trackStep('vibe_selected', { vibe: vibeKey, label: el.innerText.trim() });
+        updateProgress('vibe_selected', el.innerText.trim());
+        updatePlaces(vibeKey);
+        chosenPlace = null;
+        chosenPlaceUrl = null;
+        customInput.value = '';
+        updateCta();
+    });
+});
+
+placeSelect.addEventListener('change', () => {
+    const selected = placeSelect.options[placeSelect.selectedIndex];
+    if (selected && selected.value) {
+        chosenPlace = selected.value;
+        chosenPlaceUrl = selected.dataset.url || null;
+        
+        trackStep('place_selected', { place: selected.value });
+        
+        // If "home" vibe, don't open Google Maps automatically
+        if (chosenPlaceUrl && chosenPlaceUrl !== 'home') {
+            window.open(chosenPlaceUrl, '_blank');
+        }
+        customInput.value = '';
+    } else {
+        chosenPlace = null;
+        chosenPlaceUrl = null;
+    }
+    updateCta();
+});
+
+customBtn.addEventListener('click', () => {
+    const val = customInput.value.trim();
+    if (val) {
+        chosenPlace = val;
+        chosenPlaceUrl = `https://www.google.com/maps/search/${encodeURIComponent(val)}+Dar+es+Salaam`;
+        
+        trackStep('place_selected', { place: val, custom: true });
+        
+        window.open(chosenPlaceUrl, '_blank');
+        placeSelect.value = '';
+        updateCta();
+    } else {
+        alert('Please type a place name.');
+    }
+});
+customInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') customBtn.click();
+});
+
+yesBtn.addEventListener('click', () => {
+    yesSelected = true;
+    celebrateYes();
+    
+    trackStep('yes_clicked', { timestamp: new Date().toISOString() });
+    updateProgress('yes_clicked');
+    yesBtn.style.background = '#eecf8f';
+    yesBtn.style.boxShadow = '0 0 0 2px #d9b25f, 0 6px 20px #d9b25f66';
+    noDodgeActive = false;
+    noBtn.style.position = 'static';
+    noBtn.classList.remove('dodge');
+    noBtn.style.left = 'auto';
+    noBtn.style.top = 'auto';
+    noBtn.style.opacity = '0.3';
+    noBtn.style.pointerEvents = 'none';
+    updateCta();
+});
+
+let noDodgeActive = true;
+function dodgeNo() {
+    if (!noDodgeActive) return;
+    const containerRect = truthButtons.getBoundingClientRect();
+    const noRect = noBtn.getBoundingClientRect();
+    const maxX = Math.max(containerRect.width - noRect.width - 10, 10);
+    const maxY = Math.max(containerRect.height - noRect.height - 10, 10);
+    noBtn.style.position = 'absolute';
+    noBtn.style.left = (Math.random() * maxX) + 'px';
+    noBtn.style.top = (Math.random() * maxY) + 'px';
+    noBtn.classList.add('dodge');
+}
+noBtn.addEventListener('mouseenter', dodgeNo);
+noBtn.addEventListener('click', event => { event.preventDefault(); dodgeNo(); });
+
+function getSelectedDate() {
+    const d = document.getElementById('daySelect').value;
+    const m = document.getElementById('monthSelect').value;
+    const y = document.getElementById('yearSelect').value;
+    const monthName = document.getElementById('monthSelect').options[document.getElementById('monthSelect').selectedIndex].text;
+    return `${d} ${monthName} ${y}`;
+}
+function getSelectedTime() {
+    const h = document.getElementById('hourSelect').value;
+    const m = document.getElementById('minuteSelect').value;
+    return `${h}:${m}`;
+}
+
+document.getElementById('daySelect').addEventListener('change', updateCta);
+document.getElementById('monthSelect').addEventListener('change', updateCta);
+document.getElementById('yearSelect').addEventListener('change', updateCta);
+document.getElementById('hourSelect').addEventListener('change', updateCta);
+document.getElementById('minuteSelect').addEventListener('change', updateCta);
+
+function updateDateStatus() {
+    if (!yesSelected) return;
+    document.getElementById('yesStatus').textContent = `${getSelectedDate()} · ${getSelectedTime()}`;
+    document.getElementById('yesStatus').className = 'done';
+}
+['daySelect', 'monthSelect', 'yearSelect', 'hourSelect', 'minuteSelect'].forEach(id => {
+    document.getElementById(id).addEventListener('change', updateDateStatus);
+});
+
+function updateCta() {
+    if (yesSelected && chosenVibe && chosenPlace) {
+        ctaBtn.disabled = false;
+        ctaBtn.textContent = 'confirm our little plan';
+        hintText.textContent = 'all set — ready for a lovely plan';
+    } else {
+        ctaBtn.disabled = true;
+        ctaBtn.textContent = 'confirm our little plan';
+        let msg = 'say yes + pick vibe + place';
+        if (!yesSelected) msg = '❌ say "yes" first (the button is waiting)';
+        else if (!chosenVibe) msg = '🎨 choose a vibe (places appear)';
+        else if (!chosenPlace) msg = '📍 select a spot or type a custom place';
+        hintText.textContent = msg;
+    }
+}
+
+ctaBtn.addEventListener('click', async () => {
+    const date = getSelectedDate();
+    const time = getSelectedTime();
+    const details = `${date} · ${time} · ${chosenVibeLabel || chosenVibe} · ${chosenPlace}`;
+    
+    trackStep('date_confirmed', {
+        date: date,
+        time: time,
+        vibe: chosenVibeLabel || chosenVibe,
+        place: chosenPlace,
+        details: details
+    });
+    
+    document.getElementById('formView').classList.add('hide');
+    document.getElementById('confirmView').classList.add('show');
+    document.getElementById('receipt').innerHTML =
+        `<span class="k">for</span>         <span class="v">you</span><br>` +
+        `<span class="k">response</span>    <span class="v">yes</span><br>` +
+        `<span class="k">when</span>        <span class="v">${date} · ${time}</span><br>` +
+        `<span class="k">vibe</span>        <span class="v">${chosenVibeLabel || chosenVibe}</span><br>` +
+        `<span class="k">place</span>       <span class="v">${chosenPlace}</span><br>` +
+        `<span class="k">status</span>      <span class="v">sent with a happy heart</span>`;
+    document.querySelector('.confirm-actions').style.display = 'grid';
+    document.querySelectorAll('.confirm-actions + div').forEach(el => el.style.display = 'grid');
+});
+
+function dateSummary() {
+    return `A date is confirmed!\nWhen: ${getSelectedDate()} at ${getSelectedTime()}\nVibe: ${chosenVibeLabel || chosenVibe}\nPlace: ${chosenPlace}`;
+}
+
+document.getElementById('shareBtn').addEventListener('click', async () => {
+    const summary = dateSummary();
+    try {
+        if (navigator.share) await navigator.share({ title: 'Date night', text: summary });
+        else {
+            await navigator.clipboard.writeText(summary);
+            document.getElementById('shareBtn').textContent = 'details copied';
+            setTimeout(() => { document.getElementById('shareBtn').textContent = '📤 share plan'; }, 3000);
+        }
+    } catch (error) {}
+});
+
+document.getElementById('calendarBtn').addEventListener('click', () => {
+    const selected = new Date(
+        Number(document.getElementById('yearSelect').value),
+        Number(document.getElementById('monthSelect').value),
+        Number(document.getElementById('daySelect').value),
+        Number(document.getElementById('hourSelect').value),
+        Number(document.getElementById('minuteSelect').value)
+    );
+    const end = new Date(selected.getTime() + 2 * 60 * 60 * 1000);
+    const formatIcsDate = value => value.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const calendarTitle = `Date night — ${chosenVibeLabel || chosenVibe}`;
+    const ics = [
+        'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//NOIR//Date Night//EN',
+        'BEGIN:VEVENT', `DTSTART:${formatIcsDate(selected)}`, `DTEND:${formatIcsDate(end)}`,
+        `UID:noir-${Date.now()}@date-night`, `DTSTAMP:${formatIcsDate(new Date())}`,
+        `SUMMARY:${calendarTitle}`, `LOCATION:${chosenPlace}`,
+        'END:VEVENT', 'END:VCALENDAR'
+    ].join('\r\n');
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+    link.download = 'date-night.ics';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    const calendarButton = document.getElementById('calendarBtn');
+    calendarButton.textContent = '✅ downloaded';
+    setTimeout(() => { calendarButton.textContent = '📅 calendar'; }, 3000);
+});
+
+// ============================================================
+//  INITIALIZE
+// ============================================================
+updateCta();
+document.getElementById('placeSelector').classList.add('hidden');
+
+const dashboardVisible = showDashboard();
+if (dashboardVisible) {
+    trackStep('dashboard_accessed', { 
+        timestamp: new Date().toISOString()
+    });
+}
+
+window.addEventListener('load', () => {
+    if (!window.location.search.includes('dashboard=secret')) {
+        trackStep('page_loaded', {
+            loadTime: performance.now(),
+            screenSize: `${window.innerWidth}x${window.innerHeight}`
+        });
+    }
+});
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && !window.location.search.includes('dashboard=secret')) {
+        trackStep('page_revisited', {
+            timestamp: new Date().toISOString()
+        });
+    }
+});
+
+console.log('💛 Date invitation loaded with real-time tracking!');
+console.log('📊 View secret dashboard: add ?dashboard=secret to the URL');
+console.log('🗺️ Google Maps integration with location support!');
+console.log('🎵 Doucement.mp3 playing at 65% volume');
+</script>
+</body>
+</html>
