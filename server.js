@@ -411,7 +411,43 @@ app.get('/api/admin/plans', async (req, res) => {
 });
 
 // ============================================================
-//  TRACKING - UPDATED: viewer_name becomes recipient_name on YES
+//  ADMIN - UPDATE PLAN (Fix recipient name)
+// ============================================================
+app.patch('/api/admin/update-plan/:planKey', async (req, res) => {
+    const adminKey = req.headers['x-admin-key'];
+    if (adminKey !== 'NOIR_ADMIN_2026') {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const planKey = req.params.planKey;
+    const { recipient_name } = req.body;
+    
+    if (!recipient_name) {
+        return res.status(400).json({ error: 'recipient_name is required' });
+    }
+    
+    try {
+        const result = await pool.query(
+            'UPDATE date_plans SET recipient_name = $1, updated_at = CURRENT_TIMESTAMP WHERE plan_key = $2 RETURNING *',
+            [recipient_name, planKey]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Plan not found' });
+        }
+        
+        res.json({ 
+            success: true, 
+            message: 'Updated recipient name',
+            plan: result.rows[0]
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================================
+//  TRACKING - FIXED: viewer_name becomes recipient_name on name_entered
 // ============================================================
 app.post('/api/track/:planKey', async (req, res) => {
     const planKey = req.params.planKey;
@@ -433,7 +469,7 @@ app.post('/api/track/:planKey', async (req, res) => {
                 break;
 
             case 'name_entered':
-                // When she enters her name, update both viewer_name and recipient_name
+                // ✅ FIX: When she enters her name, update BOTH viewer_name AND recipient_name
                 updateQuery = `
                     UPDATE date_plans 
                     SET viewer_name = $1, 
@@ -442,7 +478,7 @@ app.post('/api/track/:planKey', async (req, res) => {
                     WHERE plan_key = $3
                 `;
                 updateParams = [viewerName, timestamp, planKey];
-                console.log(`📝 Name entered: ${viewerName} - Updated recipient_name`);
+                console.log(`📝 Name entered: "${viewerName}" - Updated recipient_name to match`);
                 break;
 
             case 'yes_clicked':
