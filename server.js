@@ -28,6 +28,7 @@ pool.connect((err) => {
 
 async function createTables() {
     try {
+        // Users table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -37,6 +38,8 @@ async function createTables() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        // Date plans table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS date_plans (
                 id SERIAL PRIMARY KEY,
@@ -48,6 +51,7 @@ async function createTables() {
                 vibe_selected TEXT,
                 place_selected TEXT,
                 date_confirmed TEXT,
+                viewer_name TEXT,
                 viewed_at TIMESTAMP,
                 yes_clicked_at TIMESTAMP,
                 confirmed_at TIMESTAMP,
@@ -55,17 +59,151 @@ async function createTables() {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        // Tracking log
         await pool.query(`
             CREATE TABLE IF NOT EXISTS tracking_log (
                 id SERIAL PRIMARY KEY,
                 plan_key TEXT,
                 step TEXT,
                 data TEXT,
+                viewer_name TEXT,
                 user_agent TEXT,
                 ip TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        // Love quotes table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS love_quotes (
+                id SERIAL PRIMARY KEY,
+                quote TEXT NOT NULL,
+                author VARCHAR(100),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Insert quotes if empty
+        const quoteCheck = await pool.query('SELECT COUNT(*) FROM love_quotes');
+        if (parseInt(quoteCheck.rows[0].count) === 0) {
+            const quotes = [
+                ['Love is not about how many days, months, or years you\'ve been together. It\'s about how much you love each other every single day.', 'Unknown'],
+                ['The best thing to hold onto in life is each other.', 'Audrey Hepburn'],
+                ['I have found the one whom my soul loves.', 'Song of Solomon'],
+                ['In all the world, there is no heart for me like yours.', 'Maya Angelou'],
+                ['You are the finest, loveliest, tenderest, and most beautiful person I have ever known.', 'F. Scott Fitzgerald'],
+                ['I love you without knowing how, or when, or from where. I love you simply.', 'Pablo Neruda'],
+                ['Love is when the other person\'s happiness is more important than your own.', 'H. Jackson Brown Jr.'],
+                ['The only thing we never get enough of is love.', 'Henry Miller'],
+                ['If I know what love is, it is because of you.', 'Hermann Hesse'],
+                ['You are my today and all of my tomorrows.', 'Leo Christopher'],
+                ['With you, I\'m home.', 'Unknown'],
+                ['Love is not just looking at each other, it\'s looking in the same direction.', 'Antoine de Saint-Exupéry'],
+                ['I would rather spend one lifetime with you, than face all the ages of this world alone.', 'J.R.R. Tolkien'],
+                ['You make my heart smile.', 'Unknown'],
+                ['Forever is a long time, but I wouldn\'t mind spending it by your side.', 'Unknown'],
+                ['You are my sunshine.', 'Unknown'],
+                ['I choose you. And I\'ll choose you over and over again.', 'Unknown'],
+                ['You are the best thing that\'s ever been mine.', 'Taylor Swift'],
+                ['I still fall for you every day.', 'Unknown'],
+                ['I love you to the moon and back.', 'Sam McBratney'],
+                ['You had me at hello.', 'Jerry Maguire'],
+                ['My heart is, and always will be, yours.', 'Jane Austen'],
+                ['You are my greatest adventure.', 'Unknown'],
+                ['I love you more than words can say.', 'Unknown'],
+                ['You make everything better.', 'Unknown'],
+                ['You are my happy place.', 'Unknown'],
+                ['I love you more than coffee.', 'Unknown'],
+                ['You are the peanut butter to my jelly.', 'Unknown'],
+                ['My favorite place is next to you.', 'Unknown'],
+                ['You are my everything.', 'Unknown'],
+                ['Love is composed of a single soul inhabiting two bodies.', 'Aristotle'],
+                ['Where there is love there is life.', 'Mahatma Gandhi'],
+                ['To love and be loved is to feel the sun from both sides.', 'David Viscott'],
+                ['The giving of love is an education in itself.', 'Eleanor Roosevelt'],
+                ['Love is the only force capable of transforming an enemy into a friend.', 'Martin Luther King Jr.'],
+                ['We are shaped and fashioned by what we love.', 'Johann Wolfgang von Goethe'],
+                ['The greatest happiness of life is the conviction that we are loved.', 'Victor Hugo'],
+                ['Love is the beauty of the soul.', 'Saint Augustine'],
+                ['Life without love is like a tree without blossoms or fruit.', 'Khalil Gibran'],
+                ['Love is a friendship set to music.', 'Joseph Campbell'],
+                ['The best and most beautiful things in this world cannot be seen or even heard, but must be felt with the heart.', 'Helen Keller'],
+                ['Love is the only thing that grows when shared.', 'Unknown'],
+                ['To be brave is to love someone unconditionally, without expecting anything in return.', 'Madonna'],
+                ['There is no remedy for love but to love more.', 'Henry David Thoreau'],
+                ['You complete me.', 'Jerry Maguire'],
+                ['As you wish.', 'The Princess Bride'],
+                ['You are the only person who ever made me feel like I matter.', 'Unknown'],
+                ['Upendo ni nguvu.', 'Swahili Proverb'],
+                ['Moyo wangu ni wako.', 'Swahili Proverb'],
+                ['Pendana.', 'Swahili Proverb'],
+                ['Love is like a beautiful flower that needs care and attention to bloom.', 'African Proverb'],
+                ['When love is in the heart, the eyes see beauty everywhere.', 'African Proverb'],
+                ['A man who loves you will always find a way to show it.', 'African Proverb'],
+                ['Love is the only wealth that multiplies when shared.', 'African Proverb'],
+                ['The heart that loves is always young.', 'African Proverb'],
+                ['I love you more than pizza.', 'Unknown'],
+                ['You\'re the cheese to my macaroni.', 'Unknown'],
+                ['You\'re my favorite person to annoy.', 'Unknown'],
+                ['I love you more than my phone.', 'Unknown'],
+                ['How do I love thee? Let me count the ways.', 'Elizabeth Barrett Browning'],
+                ['I carry your heart with me (I carry it in my heart).', 'E.E. Cummings'],
+                ['She walks in beauty, like the night.', 'Lord Byron'],
+                ['Love is not love which alters when it alteration finds.', 'William Shakespeare'],
+                ['My love is like a red, red rose.', 'Robert Burns'],
+                ['I loved you first, but afterwards your love outrunning mine.', 'Christina Rossetti'],
+                ['Love has no desire but to fulfill itself.', 'Khalil Gibran'],
+                ['Love is the voice under all silences.', 'E.E. Cummings'],
+                ['The heart has its reasons which reason knows nothing of.', 'Blaise Pascal'],
+                ['To love is to receive a glimpse of heaven.', 'Karen Sunde'],
+                ['Love is a canvas furnished by nature and embroidered by imagination.', 'Voltaire'],
+                ['Love is the flower of life, and blossoms unexpectedly and without law.', 'D.H. Lawrence'],
+                ['Be the reason someone smiles today.', 'Unknown'],
+                ['Love is the bridge between you and everything.', 'Rumi'],
+                ['The greatest gift you can give someone is your time, your attention, your love.', 'Unknown'],
+                ['Love means never having to say you\'re sorry.', 'Erich Segal'],
+                ['The best love is the kind that awakens the soul.', 'Nicholas Sparks'],
+                ['Love is not about possession. It\'s all about appreciation.', 'Unknown'],
+                ['To love is nothing. To be loved is something. But to love and be loved, that\'s everything.', 'Unknown'],
+                ['You are the best thing that ever happened to me.', 'Unknown'],
+                ['I love you more than all the stars in the sky.', 'Unknown'],
+                ['Forever is not long enough with you.', 'Unknown'],
+                ['My heart beats only for you.', 'Unknown'],
+                ['You are my dream come true.', 'Unknown'],
+                ['I can\'t imagine my life without you.', 'Unknown'],
+                ['You are my biggest blessing.', 'Unknown'],
+                ['I love you with all my heart and soul.', 'Unknown'],
+                ['You are the answer to my prayers.', 'Unknown'],
+                ['A hundred hearts would be too few to carry all my love for you.', 'Unknown'],
+                ['You are the poem I never knew how to write.', 'Unknown'],
+                ['I love you more than all the words in all the books.', 'Unknown'],
+                ['You are my favorite thought.', 'Unknown'],
+                ['I didn\'t know what love was until I met you.', 'Unknown'],
+                ['You make my world brighter.', 'Unknown'],
+                ['I love you to the moon and back, and then some.', 'Unknown'],
+                ['You are the reason I believe in love.', 'Unknown'],
+                ['My love for you grows stronger every day.', 'Unknown'],
+                ['You are my one and only.', 'Unknown'],
+                ['I love you more than any words can express.', 'Unknown'],
+                ['You are the greatest love story ever told.', 'Unknown'],
+                ['Every love song makes sense now, because of you.', 'Unknown'],
+                ['You are the best part of my day.', 'Unknown'],
+                ['I love you beyond measure.', 'Unknown'],
+                ['You are my forever.', 'Unknown'],
+                ['I choose you, today and always.', 'Unknown'],
+                ['You are the most beautiful thing that has ever happened to me.', 'Unknown'],
+                ['There is no one else I would rather share my life with.', 'Unknown'],
+                ['You are my sunshine on a rainy day.', 'Unknown']
+            ];
+
+            for (const [quote, author] of quotes) {
+                await pool.query('INSERT INTO love_quotes (quote, author) VALUES ($1, $2)', [quote, author]);
+            }
+            console.log('✅ 100+ love quotes added');
+        }
+
+        // Admin user
         const adminCheck = await pool.query('SELECT * FROM users WHERE email = $1', ['admin@noir.com']);
         if (adminCheck.rows.length === 0) {
             await pool.query(`
@@ -79,6 +217,52 @@ async function createTables() {
         console.error('❌ Table error:', err);
     }
 }
+
+// ============================================================
+//  LOVE QUOTES API
+// ============================================================
+
+// Get random quote
+app.get('/api/quote/random', async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM love_quotes ORDER BY RANDOM() LIMIT 1');
+        res.json({
+            quote: result.rows[0].quote,
+            author: result.rows[0].author || 'Unknown'
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin - Get all quotes
+app.get('/api/admin/quotes', async (req, res) => {
+    const adminKey = req.headers['x-admin-key'];
+    if (adminKey !== 'NOIR_ADMIN_2026') return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        const result = await pool.query('SELECT * FROM love_quotes ORDER BY RANDOM()');
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin - Add quote
+app.post('/api/admin/quotes', async (req, res) => {
+    const adminKey = req.headers['x-admin-key'];
+    if (adminKey !== 'NOIR_ADMIN_2026') return res.status(401).json({ error: 'Unauthorized' });
+    const { quote, author } = req.body;
+    try {
+        await pool.query('INSERT INTO love_quotes (quote, author) VALUES ($1, $2)', [quote, author]);
+        res.json({ success: true, message: 'Quote added' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================================
+//  CREATE PLAN
+// ============================================================
 
 // Create plan - GET
 app.get('/api/create-plan', async (req, res) => {
@@ -115,7 +299,9 @@ app.get('/api/create-plan', async (req, res) => {
     }
 });
 
-// Get status
+// ============================================================
+//  GET STATUS
+// ============================================================
 app.get('/api/status/:planKey', async (req, res) => {
     const planKey = req.params.planKey;
     try {
@@ -134,6 +320,7 @@ app.get('/api/status/:planKey', async (req, res) => {
             vibe_selected: row.vibe_selected || null,
             place_selected: row.place_selected || null,
             date_confirmed: row.date_confirmed || null,
+            viewer_name: row.viewer_name || null,
             viewed_at: row.viewed_at || null,
             yes_clicked_at: row.yes_clicked_at || null,
             confirmed_at: row.confirmed_at || null,
@@ -144,7 +331,9 @@ app.get('/api/status/:planKey', async (req, res) => {
     }
 });
 
-// Admin - all plans
+// ============================================================
+//  ADMIN - ALL PLANS
+// ============================================================
 app.get('/api/admin/plans', async (req, res) => {
     const adminKey = req.headers['x-admin-key'];
     if (adminKey !== 'NOIR_ADMIN_2026') return res.status(401).json({ error: 'Unauthorized' });
@@ -161,6 +350,7 @@ app.get('/api/admin/plans', async (req, res) => {
                 plan_key: row.plan_key,
                 recipient: row.recipient_name,
                 user_email: row.user_email,
+                viewer_name: row.viewer_name || null,
                 page_viewed: row.page_viewed,
                 yes_clicked: row.yes_clicked,
                 vibe: row.vibe_selected,
@@ -175,16 +365,21 @@ app.get('/api/admin/plans', async (req, res) => {
     }
 });
 
-// Track
+// ============================================================
+//  TRACKING
+// ============================================================
 app.post('/api/track/:planKey', async (req, res) => {
     const planKey = req.params.planKey;
     const { step, data } = req.body;
     const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const viewerName = data.viewerName || null;
+
     try {
         await pool.query(
-            'INSERT INTO tracking_log (plan_key, step, data) VALUES ($1, $2, $3)',
-            [planKey, step, JSON.stringify(data)]
+            'INSERT INTO tracking_log (plan_key, step, data, viewer_name) VALUES ($1, $2, $3, $4)',
+            [planKey, step, JSON.stringify(data), viewerName]
         );
+
         let updateQuery = '', updateParams = [];
         switch (step) {
             case 'page_viewed':
@@ -192,8 +387,8 @@ app.post('/api/track/:planKey', async (req, res) => {
                 updateParams = [timestamp, timestamp, planKey];
                 break;
             case 'yes_clicked':
-                updateQuery = `UPDATE date_plans SET yes_clicked = TRUE, yes_clicked_at = $1, updated_at = $2 WHERE plan_key = $3`;
-                updateParams = [timestamp, timestamp, planKey];
+                updateQuery = `UPDATE date_plans SET yes_clicked = TRUE, yes_clicked_at = $1, updated_at = $2, viewer_name = $3 WHERE plan_key = $4`;
+                updateParams = [timestamp, timestamp, viewerName, planKey];
                 break;
             case 'vibe_selected':
                 updateQuery = `UPDATE date_plans SET vibe_selected = $1, updated_at = $2 WHERE plan_key = $3`;
@@ -213,6 +408,7 @@ app.post('/api/track/:planKey', async (req, res) => {
         await pool.query(updateQuery, updateParams);
         res.json({ success: true, step, timestamp });
     } catch (err) {
+        console.error('❌ Tracking error:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -220,21 +416,18 @@ app.post('/api/track/:planKey', async (req, res) => {
 // ============================================================
 //  CUSTOMER STATUS
 // ============================================================
-
-// Customer status page
 app.get('/customer', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'customer.html'));
 });
 
-// Customer status API
 app.get('/api/customer/status/:planKey', async (req, res) => {
     const planKey = req.params.planKey;
-    
+
     try {
         const result = await pool.query(`
             SELECT recipient_name, page_viewed, yes_clicked,
                    vibe_selected, place_selected, date_confirmed,
-                   viewed_at, yes_clicked_at, confirmed_at
+                   viewer_name, viewed_at, yes_clicked_at, confirmed_at
             FROM date_plans
             WHERE plan_key = $1
         `, [planKey]);
@@ -251,6 +444,7 @@ app.get('/api/customer/status/:planKey', async (req, res) => {
             vibe_selected: plan.vibe_selected,
             place_selected: plan.place_selected,
             date_confirmed: plan.date_confirmed,
+            viewer_name: plan.viewer_name,
             viewed_at: plan.viewed_at,
             yes_clicked_at: plan.yes_clicked_at,
             confirmed_at: plan.confirmed_at,
@@ -259,7 +453,6 @@ app.get('/api/customer/status/:planKey', async (req, res) => {
                     '⏳ Waiting for her to open'
         });
     } catch (err) {
-        console.error('❌ Customer status error:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -267,7 +460,6 @@ app.get('/api/customer/status/:planKey', async (req, res) => {
 // ============================================================
 //  ROUTES
 // ============================================================
-
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'Admin.html'));
 });
@@ -279,7 +471,6 @@ app.get('/', (req, res) => {
 // ============================================================
 //  START SERVER
 // ============================================================
-
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ╔═══════════════════════════════════════════════════════════╗
@@ -288,6 +479,7 @@ app.listen(PORT, '0.0.0.0', () => {
 ║  📡 Server: http://localhost:${PORT}                      ║
 ║  📊 Admin: http://localhost:${PORT}/admin               ║
 ║  👤 Customer: http://localhost:${PORT}/customer?plan=KEY ║
+║  💛 Love Quotes: 100+ loaded                             ║
 ║  🔑 Admin Key: NOIR_ADMIN_2026                           ║
 ║  👤 Admin: admin@noir.com / admin123                     ║
 ║                                                           ║
