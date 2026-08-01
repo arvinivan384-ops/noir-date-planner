@@ -16,6 +16,7 @@ const pool = new Pool({
     connectionString: 'postgresql://date_planner_db_m5jx_user:6NlxfInsdNcYYdT90TkV445yWqEKl9fz@dpg-d9ml5rtaeets73a820og-a/date_planner_db_m5jx',
     ssl: { rejectUnauthorized: false }
 });
+
 pool.connect((err) => {
     if (err) {
         console.error('❌ PostgreSQL error:', err);
@@ -47,6 +48,7 @@ async function createTables() {
                 vibe_selected TEXT,
                 place_selected TEXT,
                 date_confirmed TEXT,
+                viewer_email TEXT,
                 viewed_at TIMESTAMP,
                 yes_clicked_at TIMESTAMP,
                 confirmed_at TIMESTAMP,
@@ -60,6 +62,7 @@ async function createTables() {
                 plan_key TEXT,
                 step TEXT,
                 data TEXT,
+                viewer_email TEXT,
                 user_agent TEXT,
                 ip TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -78,6 +81,10 @@ async function createTables() {
         console.error('❌ Table error:', err);
     }
 }
+
+// ============================================================
+//  CREATE PLAN
+// ============================================================
 
 // Create plan - POST
 app.post('/api/create-plan', async (req, res) => {
@@ -105,7 +112,8 @@ app.post('/api/create-plan', async (req, res) => {
             success: true,
             planKey: planKey,
             link: `${req.protocol}://${req.get('host')}/?plan=${planKey}`,
-            adminLink: `${req.protocol}://${req.get('host')}/?plan=${planKey}&dashboard=secret`
+            adminLink: `${req.protocol}://${req.get('host')}/?plan=${planKey}&dashboard=secret`,
+            customerLink: `${req.protocol}://${req.get('host')}/customer?plan=${planKey}`
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -139,7 +147,8 @@ app.get('/api/create-plan', async (req, res) => {
             success: true,
             planKey: planKey,
             link: `${req.protocol}://${req.get('host')}/?plan=${planKey}`,
-            adminLink: `${req.protocol}://${req.get('host')}/?plan=${planKey}&dashboard=secret`
+            adminLink: `${req.protocol}://${req.get('host')}/?plan=${planKey}&dashboard=secret`,
+            customerLink: `${req.protocol}://${req.get('host')}/customer?plan=${planKey}`
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -165,6 +174,7 @@ app.get('/api/status/:planKey', async (req, res) => {
             vibe_selected: row.vibe_selected || null,
             place_selected: row.place_selected || null,
             date_confirmed: row.date_confirmed || null,
+            viewer_email: row.viewer_email || null,
             viewed_at: row.viewed_at || null,
             yes_clicked_at: row.yes_clicked_at || null,
             confirmed_at: row.confirmed_at || null,
@@ -174,6 +184,10 @@ app.get('/api/status/:planKey', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+// ============================================================
+//  ADMIN DASHBOARD
+// ============================================================
 
 // Admin - all plans
 app.get('/api/admin/plans', async (req, res) => {
@@ -192,6 +206,7 @@ app.get('/api/admin/plans', async (req, res) => {
                 plan_key: row.plan_key,
                 recipient: row.recipient_name,
                 user_email: row.user_email,
+                viewer_email: row.viewer_email || null,
                 page_viewed: row.page_viewed,
                 yes_clicked: row.yes_clicked,
                 vibe: row.vibe_selected,
@@ -206,16 +221,23 @@ app.get('/api/admin/plans', async (req, res) => {
     }
 });
 
-// Track
+// ============================================================
+//  TRACKING
+// ============================================================
+
 app.post('/api/track/:planKey', async (req, res) => {
     const planKey = req.params.planKey;
     const { step, data } = req.body;
     const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const viewerEmail = data.viewerEmail || null;
+    
     try {
+        // Insert into tracking log
         await pool.query(
-            'INSERT INTO tracking_log (plan_key, step, data) VALUES ($1, $2, $3)',
-            [planKey, step, JSON.stringify(data)]
+            'INSERT INTO tracking_log (plan_key, step, data, viewer_email) VALUES ($1, $2, $3, $4)',
+            [planKey, step, JSON.stringify(data), viewerEmail]
         );
+        
         let updateQuery = '', updateParams = [];
         switch (step) {
             case 'page_viewed':
@@ -223,8 +245,8 @@ app.post('/api/track/:planKey', async (req, res) => {
                 updateParams = [timestamp, timestamp, planKey];
                 break;
             case 'yes_clicked':
-                updateQuery = `UPDATE date_plans SET yes_clicked = TRUE, yes_clicked_at = $1, updated_at = $2 WHERE plan_key = $3`;
-                updateParams = [timestamp, timestamp, planKey];
+                updateQuery = `UPDATE date_plans SET yes_clicked = TRUE, yes_clicked_at = $1, updated_at = $2, viewer_email = $3 WHERE plan_key = $4`;
+                updateParams = [timestamp, timestamp, viewerEmail, planKey];
                 break;
             case 'vibe_selected':
                 updateQuery = `UPDATE date_plans SET vibe_selected = $1, updated_at = $2 WHERE plan_key = $3`;
@@ -244,11 +266,62 @@ app.post('/api/track/:planKey', async (req, res) => {
         await pool.query(updateQuery, updateParams);
         res.json({ success: true, step, timestamp });
     } catch (err) {
+        console.error('❌ Tracking error:', err);
         res.status(500).json({ error: err.message });
     }
 });
 
-// Routes
+// ============================================================
+//  CUSTOMER STATUS
+// ============================================================
+
+// Customer status page
+app.get('/customer', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'customer.html'));
+});
+
+// Customer status API
+app.get('/api/customer/status/:planKey', async (req, res) => {
+    const planKey = req.params.planKey;
+    
+    try {
+        const result = await pool.query(`
+            SELECT recipient_name, page_viewed, yes_clicked,
+                   vibe_selected, place_selected, date_confirmed,
+                   viewer_email, viewed_at, yes_clicked_at, confirmed_at
+            FROM date_plans
+            WHERE plan_key = $1
+        `, [planKey]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Plan not found' });
+        }
+
+        const plan = result.rows[0];
+        res.json({
+            recipient: plan.recipient_name,
+            page_viewed: plan.page_viewed,
+            yes_clicked: plan.yes_clicked,
+            vibe_selected: plan.vibe_selected,
+            place_selected: plan.place_selected,
+            date_confirmed: plan.date_confirmed,
+            viewer_email: plan.viewer_email,
+            viewed_at: plan.viewed_at,
+            yes_clicked_at: plan.yes_clicked_at,
+            confirmed_at: plan.confirmed_at,
+            status: plan.yes_clicked ? '💛 She said YES!' :
+                    plan.page_viewed ? '👀 She opened the page' :
+                    '⏳ Waiting for her to open'
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================================
+//  ROUTES
+// ============================================================
+
 app.get('/admin', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'Admin.html'));
 });
@@ -257,7 +330,10 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Start server
+// ============================================================
+//  START SERVER
+// ============================================================
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ╔═══════════════════════════════════════════════════════════╗
@@ -265,6 +341,7 @@ app.listen(PORT, '0.0.0.0', () => {
 ║                                                           ║
 ║  📡 Server: http://localhost:${PORT}                      ║
 ║  📊 Admin: http://localhost:${PORT}/admin               ║
+║  👤 Customer: http://localhost:${PORT}/customer?plan=KEY ║
 ║  🔑 Admin Key: NOIR_ADMIN_2026                           ║
 ║  👤 Admin: admin@noir.com / admin123                     ║
 ║                                                           ║
