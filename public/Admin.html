@@ -344,11 +344,80 @@
             color: #00ffaa;
         }
 
+        /* --- CUSTOMER STATUS MODAL --- */
+        .customer-status-modal .modal {
+            max-width: 500px;
+        }
+
+        .status-display {
+            padding: 15px;
+            text-align: center;
+        }
+
+        .status-display .icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .status-display .text {
+            font-size: 20px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .status-display .sub {
+            font-size: 13px;
+            color: #a09cb0;
+            margin-top: 5px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .status-item {
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .status-item .label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #6a5a6a;
+            letter-spacing: 0.05em;
+        }
+
+        .status-item .value {
+            font-size: 14px;
+            color: #eecf8f;
+            margin-top: 3px;
+        }
+
+        .copy-btn {
+            background: rgba(238,207,143,0.1);
+            border: 1px solid rgba(238,207,143,0.2);
+            border-radius: 20px;
+            padding: 4px 12px;
+            color: #eecf8f;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.3s;
+        }
+
+        .copy-btn:hover {
+            background: rgba(238,207,143,0.2);
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
-            min-width: 700px;
+            min-width: 750px;
         }
 
         th {
@@ -417,12 +486,12 @@
         }
 
         .modal {
-            background: rgba(25, 15, 38, 0.75);
+            background: rgba(25, 15, 38, 0.85);
             backdrop-filter: blur(25px);
             border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 20px;
             padding: 30px;
-            max-width: 500px;
+            max-width: 550px;
             width: 90%;
             max-height: 80vh;
             overflow-y: auto;
@@ -431,12 +500,6 @@
         .modal h2 {
             color: #00f0ff;
             margin-bottom: 15px;
-        }
-
-        .modal p {
-            color: rgba(160, 156, 176, 0.8);
-            margin-bottom: 10px;
-            line-height: 1.6;
         }
 
         .modal .close-btn {
@@ -507,6 +570,10 @@
 
             .stat-value {
                 font-size: 22px;
+            }
+
+            .status-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -810,14 +877,14 @@
         </div>
     </div>
 
-    <!-- MODAL: Plan Details -->
-    <div class="modal-overlay" id="planDetailModal">
+    <!-- MODAL: Plan Details / Customer Status -->
+    <div class="modal-overlay customer-status-modal" id="customerStatusModal">
         <div class="modal">
-            <h2><i class="fas fa-info-circle"></i> Plan Details</h2>
-            <div id="planDetailContent">
+            <h2><i class="fas fa-user"></i> Customer Status</h2>
+            <div id="customerStatusContent">
                 <p>Loading...</p>
             </div>
-            <button class="close-btn" onclick="closeModal('planDetailModal')">Close</button>
+            <button class="close-btn" onclick="closeModal('customerStatusModal')">Close</button>
         </div>
     </div>
 
@@ -898,12 +965,15 @@
         }
 
         // --- MODAL ---
-        function showModal(type) {
+        function showModal(type, planKey) {
             if (type === 'createPlan') {
                 document.getElementById('createPlanModal').classList.add('show');
                 document.getElementById('newPlanResult').style.display = 'none';
                 document.getElementById('newPlanEmail').value = '';
                 document.getElementById('newPlanRecipient').value = 'Radhia';
+            } else if (type === 'customerStatus') {
+                document.getElementById('customerStatusModal').classList.add('show');
+                loadCustomerStatus(planKey);
             }
         }
 
@@ -918,6 +988,73 @@
                 }
             });
         });
+
+        // --- LOAD CUSTOMER STATUS (Embedded in Admin Dashboard) ---
+        async function loadCustomerStatus(planKey) {
+            const content = document.getElementById('customerStatusContent');
+            content.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
+
+            try {
+                const response = await fetch(`/api/customer/status/${planKey}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Get status icon and text
+                    let icon, text, sub;
+                    if (data.yes_clicked) {
+                        icon = '💛';
+                        text = 'She said YES! 🎉';
+                        sub = `Confirmed on ${new Date(data.confirmed_at || Date.now()).toLocaleDateString()}`;
+                    } else if (data.page_viewed) {
+                        icon = '👀';
+                        text = 'She opened the page';
+                        sub = 'Waiting for her to say yes... 💛';
+                    } else {
+                        icon = '⏳';
+                        text = 'Waiting...';
+                        sub = 'She hasn\'t opened the page yet';
+                    }
+
+                    content.innerHTML = `
+                        <div class="status-display">
+                            <div class="icon">${icon}</div>
+                            <div class="text">${text}</div>
+                            <div class="sub">${sub}</div>
+                        </div>
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <div class="label">👤 Recipient</div>
+                                <div class="value">${data.recipient || 'Radhia'}</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="label">📄 Page Viewed</div>
+                                <div class="value">${data.page_viewed ? '✅ Yes' : '⏳ No'}</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="label">💛 Said YES</div>
+                                <div class="value">${data.yes_clicked ? '💛 YES!' : '⏳ Not yet'}</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="label">🎯 Vibe Chosen</div>
+                                <div class="value">${data.vibe_selected || '—'}</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="label">📍 Place</div>
+                                <div class="value">${data.place_selected || '—'}</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="label">📅 Date Confirmed</div>
+                                <div class="value">${data.date_confirmed || '⏳ Not yet'}</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = '<p style="color:rgba(232,130,159,0.6);">❌ Plan not found.</p>';
+                }
+            } catch (error) {
+                content.innerHTML = '<p style="color:rgba(232,130,159,0.6);">❌ Error loading status.</p>';
+            }
+        }
 
         // --- CREATE NEW PLAN ---
         async function createNewPlan() {
@@ -941,9 +1078,13 @@
                     resultDiv.innerHTML = `
                         ✅ Plan created successfully!<br>
                         <strong>Plan Key:</strong> ${data.planKey}<br>
-                        <strong>Link:</strong> <a href="${data.link}" target="_blank" style="color:#00f0ff;">${data.link}</a><br>
+                        <strong>Date Link:</strong> <a href="${data.link}" target="_blank" style="color:#00f0ff;">${data.link}</a><br>
+                        <strong>Customer Status:</strong> <a href="#" onclick="showModal('customerStatus', '${data.planKey}'); return false;" style="color:#eecf8f;">View Status</a><br>
                         <button class="action-btn success" onclick="copyToClipboard('${data.link}')" style="margin-top:8px;">
                             <i class="fas fa-copy"></i> Copy Link
+                        </button>
+                        <button class="action-btn" onclick="showModal('customerStatus', '${data.planKey}')" style="margin-top:8px;">
+                            <i class="fas fa-eye"></i> View Status
                         </button>
                     `;
                     loadData();
@@ -1015,37 +1156,13 @@
                         <td style="font-size:12px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.place || '—'}</td>
                         <td>${confirmedText}</td>
                         <td>
-                            <button class="action-btn" onclick="viewPlan('${plan.plan_key}')" style="padding:4px 8px;font-size:10px;">
-                                <i class="fas fa-eye"></i>
+                            <button class="action-btn" onclick="showModal('customerStatus', '${plan.plan_key}')" style="padding:4px 8px;font-size:10px;">
+                                <i class="fas fa-eye"></i> View
                             </button>
                         </td>
                     </tr>
                 `;
             }).join('');
-        }
-
-        // --- VIEW PLAN DETAILS ---
-        async function viewPlan(planKey) {
-            const modal = document.getElementById('planDetailModal');
-            const content = document.getElementById('planDetailContent');
-            modal.classList.add('show');
-            content.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Loading...</p>';
-
-            try {
-                const response = await fetch(`/api/status/${planKey}`);
-                const data = await response.json();
-                content.innerHTML = `
-                    <p><strong>Recipient:</strong> ${data.recipient_name || 'Radhia'}</p>
-                    <p><strong>Page Viewed:</strong> ${data.page_viewed ? '✅ Yes' : '⏳ No'}</p>
-                    <p><strong>Said YES:</strong> ${data.yes_clicked ? '💛 Yes' : '⏳ No'}</p>
-                    <p><strong>Vibe:</strong> ${data.vibe_selected || '—'}</p>
-                    <p><strong>Place:</strong> ${data.place_selected || '—'}</p>
-                    <p><strong>Date Confirmed:</strong> ${data.date_confirmed || '—'}</p>
-                    <p><strong>Updated:</strong> ${data.updated_at ? new Date(data.updated_at).toLocaleString() : '—'}</p>
-                `;
-            } catch (error) {
-                content.innerHTML = '<p style="color:rgba(232,130,159,0.6);">Error loading plan details.</p>';
-            }
         }
 
         // --- EXPORT DATA ---
