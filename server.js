@@ -12,11 +12,11 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // PostgreSQL Connection
+// PostgreSQL Connection
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: process.env.DB_URL || process.env.DATABASE_URL,   // ← CHANGE TO THIS
     ssl: { rejectUnauthorized: false }
 });
-
 pool.connect((err) => {
     if (err) {
         console.error('❌ PostgreSQL error:', err);
