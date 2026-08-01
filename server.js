@@ -39,18 +39,19 @@ async function createTables() {
             )
         `);
 
-        // Date plans table
+        // Date plans table with DEFAULT 'Your Date'
         await pool.query(`
             CREATE TABLE IF NOT EXISTS date_plans (
                 id SERIAL PRIMARY KEY,
                 plan_key TEXT UNIQUE NOT NULL,
                 user_id INTEGER REFERENCES users(id),
-                recipient_name TEXT DEFAULT 'Radhia',
+                recipient_name TEXT DEFAULT 'Your Date',
                 page_viewed BOOLEAN DEFAULT FALSE,
                 yes_clicked BOOLEAN DEFAULT FALSE,
                 vibe_selected TEXT,
                 place_selected TEXT,
                 date_confirmed TEXT,
+                viewer_name TEXT,
                 viewed_at TIMESTAMP,
                 yes_clicked_at TIMESTAMP,
                 confirmed_at TIMESTAMP,
@@ -59,7 +60,7 @@ async function createTables() {
             )
         `);
 
-        // ===== ADD viewer_name COLUMN =====
+        // Add viewer_name column if not exists
         try {
             await pool.query(`
                 ALTER TABLE date_plans ADD COLUMN IF NOT EXISTS viewer_name TEXT
@@ -82,7 +83,7 @@ async function createTables() {
             )
         `);
 
-        // ===== ADD viewer_name to tracking_log =====
+        // Add viewer_name to tracking_log
         try {
             await pool.query(`
                 ALTER TABLE tracking_log ADD COLUMN IF NOT EXISTS viewer_name TEXT
@@ -282,9 +283,44 @@ app.post('/api/admin/quotes', async (req, res) => {
 //  CREATE PLAN
 // ============================================================
 
-// Create plan - GET
+// Create plan - GET (Default: 'Your Date')
 app.get('/api/create-plan', async (req, res) => {
-    const { email, recipientName = 'Radhia' } = req.query;
+    const { email, recipientName = 'Your Date' } = req.query;
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+    const planKey = crypto.randomBytes(8).toString('hex');
+    try {
+        let user = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+        let userId;
+        if (user.rows.length > 0) {
+            userId = user.rows[0].id;
+        } else {
+            const password = crypto.randomBytes(8).toString('hex');
+            const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+            const newUser = await pool.query(
+                'INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING id',
+                [email, hashedPassword, 'user']
+            );
+            userId = newUser.rows[0].id;
+        }
+        await pool.query(
+            'INSERT INTO date_plans (plan_key, user_id, recipient_name) VALUES ($1, $2, $3)',
+            [planKey, userId, recipientName]
+        );
+        res.json({
+            success: true,
+            planKey: planKey,
+            link: `${req.protocol}://${req.get('host')}/?plan=${planKey}`,
+            adminLink: `${req.protocol}://${req.get('host')}/?plan=${planKey}&dashboard=secret`,
+            customerLink: `${req.protocol}://${req.get('host')}/customer?plan=${planKey}`
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Create plan - POST (Default: 'Your Date')
+app.post('/api/create-plan', async (req, res) => {
+    const { email, recipientName = 'Your Date' } = req.body;
     if (!email) return res.status(400).json({ error: 'Email is required' });
     const planKey = crypto.randomBytes(8).toString('hex');
     try {
@@ -498,6 +534,7 @@ app.listen(PORT, '0.0.0.0', () => {
 ║  📡 Server: http://localhost:${PORT}                      ║
 ║  📊 Admin: http://localhost:${PORT}/admin               ║
 ║  👤 Customer: http://localhost:${PORT}/customer?plan=KEY ║
+║  💛 Default Recipient: "Your Date"                      ║
 ║  💛 Love Quotes: 100+ loaded                             ║
 ║  🔑 Admin Key: NOIR_ADMIN_2026                           ║
 ║  👤 Admin: admin@noir.com / admin123                     ║
