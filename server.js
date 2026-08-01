@@ -48,7 +48,6 @@ async function createTables() {
                 vibe_selected TEXT,
                 place_selected TEXT,
                 date_confirmed TEXT,
-                viewer_email TEXT,
                 viewed_at TIMESTAMP,
                 yes_clicked_at TIMESTAMP,
                 confirmed_at TIMESTAMP,
@@ -62,7 +61,6 @@ async function createTables() {
                 plan_key TEXT,
                 step TEXT,
                 data TEXT,
-                viewer_email TEXT,
                 user_agent TEXT,
                 ip TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -81,44 +79,6 @@ async function createTables() {
         console.error('❌ Table error:', err);
     }
 }
-
-// ============================================================
-//  CREATE PLAN
-// ============================================================
-
-// Create plan - POST
-app.post('/api/create-plan', async (req, res) => {
-    const { email, recipientName = 'Radhia' } = req.body;
-    const planKey = crypto.randomBytes(8).toString('hex');
-    try {
-        let user = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
-        let userId;
-        if (user.rows.length > 0) {
-            userId = user.rows[0].id;
-        } else {
-            const password = crypto.randomBytes(8).toString('hex');
-            const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
-            const newUser = await pool.query(
-                'INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING id',
-                [email, hashedPassword, 'user']
-            );
-            userId = newUser.rows[0].id;
-        }
-        await pool.query(
-            'INSERT INTO date_plans (plan_key, user_id, recipient_name) VALUES ($1, $2, $3)',
-            [planKey, userId, recipientName]
-        );
-        res.json({
-            success: true,
-            planKey: planKey,
-            link: `${req.protocol}://${req.get('host')}/?plan=${planKey}`,
-            adminLink: `${req.protocol}://${req.get('host')}/?plan=${planKey}&dashboard=secret`,
-            customerLink: `${req.protocol}://${req.get('host')}/customer?plan=${planKey}`
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 
 // Create plan - GET
 app.get('/api/create-plan', async (req, res) => {
@@ -174,7 +134,6 @@ app.get('/api/status/:planKey', async (req, res) => {
             vibe_selected: row.vibe_selected || null,
             place_selected: row.place_selected || null,
             date_confirmed: row.date_confirmed || null,
-            viewer_email: row.viewer_email || null,
             viewed_at: row.viewed_at || null,
             yes_clicked_at: row.yes_clicked_at || null,
             confirmed_at: row.confirmed_at || null,
@@ -184,10 +143,6 @@ app.get('/api/status/:planKey', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-
-// ============================================================
-//  ADMIN DASHBOARD
-// ============================================================
 
 // Admin - all plans
 app.get('/api/admin/plans', async (req, res) => {
@@ -206,7 +161,6 @@ app.get('/api/admin/plans', async (req, res) => {
                 plan_key: row.plan_key,
                 recipient: row.recipient_name,
                 user_email: row.user_email,
-                viewer_email: row.viewer_email || null,
                 page_viewed: row.page_viewed,
                 yes_clicked: row.yes_clicked,
                 vibe: row.vibe_selected,
@@ -221,23 +175,16 @@ app.get('/api/admin/plans', async (req, res) => {
     }
 });
 
-// ============================================================
-//  TRACKING
-// ============================================================
-
+// Track
 app.post('/api/track/:planKey', async (req, res) => {
     const planKey = req.params.planKey;
     const { step, data } = req.body;
     const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    const viewerEmail = data.viewerEmail || null;
-    
     try {
-        // Insert into tracking log
         await pool.query(
-            'INSERT INTO tracking_log (plan_key, step, data, viewer_email) VALUES ($1, $2, $3, $4)',
-            [planKey, step, JSON.stringify(data), viewerEmail]
+            'INSERT INTO tracking_log (plan_key, step, data) VALUES ($1, $2, $3)',
+            [planKey, step, JSON.stringify(data)]
         );
-        
         let updateQuery = '', updateParams = [];
         switch (step) {
             case 'page_viewed':
@@ -245,8 +192,8 @@ app.post('/api/track/:planKey', async (req, res) => {
                 updateParams = [timestamp, timestamp, planKey];
                 break;
             case 'yes_clicked':
-                updateQuery = `UPDATE date_plans SET yes_clicked = TRUE, yes_clicked_at = $1, updated_at = $2, viewer_email = $3 WHERE plan_key = $4`;
-                updateParams = [timestamp, timestamp, viewerEmail, planKey];
+                updateQuery = `UPDATE date_plans SET yes_clicked = TRUE, yes_clicked_at = $1, updated_at = $2 WHERE plan_key = $3`;
+                updateParams = [timestamp, timestamp, planKey];
                 break;
             case 'vibe_selected':
                 updateQuery = `UPDATE date_plans SET vibe_selected = $1, updated_at = $2 WHERE plan_key = $3`;
@@ -266,7 +213,6 @@ app.post('/api/track/:planKey', async (req, res) => {
         await pool.query(updateQuery, updateParams);
         res.json({ success: true, step, timestamp });
     } catch (err) {
-        console.error('❌ Tracking error:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -288,7 +234,7 @@ app.get('/api/customer/status/:planKey', async (req, res) => {
         const result = await pool.query(`
             SELECT recipient_name, page_viewed, yes_clicked,
                    vibe_selected, place_selected, date_confirmed,
-                   viewer_email, viewed_at, yes_clicked_at, confirmed_at
+                   viewed_at, yes_clicked_at, confirmed_at
             FROM date_plans
             WHERE plan_key = $1
         `, [planKey]);
@@ -305,7 +251,6 @@ app.get('/api/customer/status/:planKey', async (req, res) => {
             vibe_selected: plan.vibe_selected,
             place_selected: plan.place_selected,
             date_confirmed: plan.date_confirmed,
-            viewer_email: plan.viewer_email,
             viewed_at: plan.viewed_at,
             yes_clicked_at: plan.yes_clicked_at,
             confirmed_at: plan.confirmed_at,
@@ -314,6 +259,7 @@ app.get('/api/customer/status/:planKey', async (req, res) => {
                     '⏳ Waiting for her to open'
         });
     } catch (err) {
+        console.error('❌ Customer status error:', err);
         res.status(500).json({ error: err.message });
     }
 });
