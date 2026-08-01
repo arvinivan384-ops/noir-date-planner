@@ -77,21 +77,12 @@ async function createTables() {
                 plan_key TEXT,
                 step TEXT,
                 data TEXT,
+                viewer_name TEXT,
                 user_agent TEXT,
                 ip TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-
-        // Add viewer_name to tracking_log
-        try {
-            await pool.query(`
-                ALTER TABLE tracking_log ADD COLUMN IF NOT EXISTS viewer_name TEXT
-            `);
-            console.log('✅ viewer_name column added to tracking_log');
-        } catch (err) {
-            console.log('ℹ️ viewer_name column check in tracking_log:', err.message);
-        }
 
         // Love quotes table
         await pool.query(`
@@ -420,7 +411,7 @@ app.get('/api/admin/plans', async (req, res) => {
 });
 
 // ============================================================
-//  TRACKING
+//  TRACKING - UPDATED: viewer_name becomes recipient_name on YES
 // ============================================================
 app.post('/api/track/:planKey', async (req, res) => {
     const planKey = req.params.planKey;
@@ -440,22 +431,49 @@ app.post('/api/track/:planKey', async (req, res) => {
                 updateQuery = `UPDATE date_plans SET page_viewed = TRUE, viewed_at = $1, updated_at = $2 WHERE plan_key = $3`;
                 updateParams = [timestamp, timestamp, planKey];
                 break;
+
+            case 'name_entered':
+                // When she enters her name, update both viewer_name and recipient_name
+                updateQuery = `
+                    UPDATE date_plans 
+                    SET viewer_name = $1, 
+                        recipient_name = $1, 
+                        updated_at = $2 
+                    WHERE plan_key = $3
+                `;
+                updateParams = [viewerName, timestamp, planKey];
+                console.log(`📝 Name entered: ${viewerName} - Updated recipient_name`);
+                break;
+
             case 'yes_clicked':
-                updateQuery = `UPDATE date_plans SET yes_clicked = TRUE, yes_clicked_at = $1, updated_at = $2, viewer_name = $3 WHERE plan_key = $4`;
+                // If somehow name wasn't set earlier, set it now
+                updateQuery = `
+                    UPDATE date_plans 
+                    SET yes_clicked = TRUE, 
+                        yes_clicked_at = $1, 
+                        updated_at = $2,
+                        viewer_name = COALESCE(viewer_name, $3),
+                        recipient_name = COALESCE(recipient_name, $3)
+                    WHERE plan_key = $4
+                `;
                 updateParams = [timestamp, timestamp, viewerName, planKey];
                 break;
+
             case 'vibe_selected':
                 updateQuery = `UPDATE date_plans SET vibe_selected = $1, updated_at = $2 WHERE plan_key = $3`;
                 updateParams = [data.vibe || data.label, timestamp, planKey];
                 break;
+
             case 'place_selected':
                 updateQuery = `UPDATE date_plans SET place_selected = $1, updated_at = $2 WHERE plan_key = $3`;
                 updateParams = [data.place, timestamp, planKey];
                 break;
+
             case 'date_confirmed':
                 updateQuery = `UPDATE date_plans SET date_confirmed = $1, confirmed_at = $2, updated_at = $3 WHERE plan_key = $4`;
                 updateParams = [data.details, timestamp, timestamp, planKey];
                 break;
+
             default:
                 return res.json({ success: true });
         }
@@ -534,7 +552,7 @@ app.listen(PORT, '0.0.0.0', () => {
 ║  📡 Server: http://localhost:${PORT}                      ║
 ║  📊 Admin: http://localhost:${PORT}/admin               ║
 ║  👤 Customer: http://localhost:${PORT}/customer?plan=KEY ║
-║  💛 Default Recipient: "Your Date"                      ║
+║  💛 Auto-Recipient: Viewer name becomes recipient       ║
 ║  💛 Love Quotes: 100+ loaded                             ║
 ║  🔑 Admin Key: NOIR_ADMIN_2026                           ║
 ║  👤 Admin: admin@noir.com / admin123                     ║
