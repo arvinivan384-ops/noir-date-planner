@@ -3,6 +3,7 @@ const cors = require('cors');
 const { Pool } = require('pg');
 const path = require('path');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,7 +12,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// PostgreSQL Connection
+// ============================================================
+//  DATABASE CONNECTION
+// ============================================================
 const pool = new Pool({
     connectionString: 'postgresql://date_planner_db_m5jx_user:6NlxfInsdNcYYdT90TkV445yWqEKl9fz@dpg-d9ml5rtaeets73a820og-a/date_planner_db_m5jx',
     ssl: { rejectUnauthorized: false }
@@ -26,9 +29,11 @@ pool.connect((err) => {
     }
 });
 
+// ============================================================
+//  CREATE TABLES
+// ============================================================
 async function createTables() {
     try {
-        // Users table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -39,7 +44,6 @@ async function createTables() {
             )
         `);
 
-        // Date plans table with DEFAULT 'Your Date'
         await pool.query(`
             CREATE TABLE IF NOT EXISTS date_plans (
                 id SERIAL PRIMARY KEY,
@@ -60,17 +64,6 @@ async function createTables() {
             )
         `);
 
-        // Add viewer_name column if not exists
-        try {
-            await pool.query(`
-                ALTER TABLE date_plans ADD COLUMN IF NOT EXISTS viewer_name TEXT
-            `);
-            console.log('✅ viewer_name column added to date_plans');
-        } catch (err) {
-            console.log('ℹ️ viewer_name column check:', err.message);
-        }
-
-        // Tracking log
         await pool.query(`
             CREATE TABLE IF NOT EXISTS tracking_log (
                 id SERIAL PRIMARY KEY,
@@ -78,13 +71,14 @@ async function createTables() {
                 step TEXT,
                 data TEXT,
                 viewer_name TEXT,
-                user_agent TEXT,
                 ip TEXT,
+                country TEXT,
+                city TEXT,
+                user_agent TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
 
-        // Love quotes table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS love_quotes (
                 id SERIAL PRIMARY KEY,
@@ -94,57 +88,38 @@ async function createTables() {
             )
         `);
 
-        // Insert quotes if empty
+        // Add quotes
         const quoteCheck = await pool.query('SELECT COUNT(*) FROM love_quotes');
         if (parseInt(quoteCheck.rows[0].count) === 0) {
             const quotes = [
                 ['Love is not about how many days, months, or years you\'ve been together. It\'s about how much you love each other every single day.', 'Unknown'],
                 ['The best thing to hold onto in life is each other.', 'Audrey Hepburn'],
                 ['I have found the one whom my soul loves.', 'Song of Solomon'],
-                ['In all the world, there is no heart for me like yours.', 'Maya Angelou'],
                 ['You are the finest, loveliest, tenderest, and most beautiful person I have ever known.', 'F. Scott Fitzgerald'],
                 ['I love you without knowing how, or when, or from where. I love you simply.', 'Pablo Neruda'],
                 ['Love is when the other person\'s happiness is more important than your own.', 'H. Jackson Brown Jr.'],
-                ['The only thing we never get enough of is love.', 'Henry Miller'],
-                ['If I know what love is, it is because of you.', 'Hermann Hesse'],
                 ['You are my today and all of my tomorrows.', 'Leo Christopher'],
                 ['With you, I\'m home.', 'Unknown'],
-                ['Love is not just looking at each other, it\'s looking in the same direction.', 'Antoine de Saint-Exupéry'],
-                ['I would rather spend one lifetime with you, than face all the ages of this world alone.', 'J.R.R. Tolkien'],
-                ['You make my heart smile.', 'Unknown'],
-                ['Forever is a long time, but I wouldn\'t mind spending it by your side.', 'Unknown'],
-                ['You are my sunshine.', 'Unknown'],
                 ['I choose you. And I\'ll choose you over and over again.', 'Unknown'],
-                ['You are the best thing that\'s ever been mine.', 'Taylor Swift'],
-                ['I still fall for you every day.', 'Unknown'],
+                ['You are my sunshine.', 'Unknown'],
+                ['You are my greatest adventure.', 'Unknown'],
                 ['I love you to the moon and back.', 'Sam McBratney'],
                 ['You had me at hello.', 'Jerry Maguire'],
                 ['My heart is, and always will be, yours.', 'Jane Austen'],
-                ['You are my greatest adventure.', 'Unknown'],
-                ['I love you more than words can say.', 'Unknown'],
-                ['You make everything better.', 'Unknown'],
-                ['You are my happy place.', 'Unknown'],
-                ['I love you more than coffee.', 'Unknown'],
-                ['You are the peanut butter to my jelly.', 'Unknown'],
-                ['My favorite place is next to you.', 'Unknown'],
                 ['You are my everything.', 'Unknown'],
                 ['Love is composed of a single soul inhabiting two bodies.', 'Aristotle'],
                 ['Where there is love there is life.', 'Mahatma Gandhi'],
                 ['To love and be loved is to feel the sun from both sides.', 'David Viscott'],
-                ['The giving of love is an education in itself.', 'Eleanor Roosevelt'],
                 ['Love is the only force capable of transforming an enemy into a friend.', 'Martin Luther King Jr.'],
-                ['We are shaped and fashioned by what we love.', 'Johann Wolfgang von Goethe'],
                 ['The greatest happiness of life is the conviction that we are loved.', 'Victor Hugo'],
                 ['Love is the beauty of the soul.', 'Saint Augustine'],
                 ['Life without love is like a tree without blossoms or fruit.', 'Khalil Gibran'],
                 ['Love is a friendship set to music.', 'Joseph Campbell'],
-                ['The best and most beautiful things in this world cannot be seen or even heard, but must be felt with the heart.', 'Helen Keller'],
                 ['Love is the only thing that grows when shared.', 'Unknown'],
                 ['To be brave is to love someone unconditionally, without expecting anything in return.', 'Madonna'],
                 ['There is no remedy for love but to love more.', 'Henry David Thoreau'],
                 ['You complete me.', 'Jerry Maguire'],
                 ['As you wish.', 'The Princess Bride'],
-                ['You are the only person who ever made me feel like I matter.', 'Unknown'],
                 ['Upendo ni nguvu.', 'Swahili Proverb'],
                 ['Moyo wangu ni wako.', 'Swahili Proverb'],
                 ['Pendana.', 'Swahili Proverb'],
@@ -204,7 +179,9 @@ async function createTables() {
                 ['I choose you, today and always.', 'Unknown'],
                 ['You are the most beautiful thing that has ever happened to me.', 'Unknown'],
                 ['There is no one else I would rather share my life with.', 'Unknown'],
-                ['You are my sunshine on a rainy day.', 'Unknown']
+                ['You are my sunshine on a rainy day.', 'Unknown'],
+                ['Love is the only thing that makes life worth living.', 'Unknown'],
+                ['Every day with you is a beautiful day.', 'Unknown']
             ];
 
             for (const [quote, author] of quotes) {
@@ -229,10 +206,47 @@ async function createTables() {
 }
 
 // ============================================================
-//  LOVE QUOTES API
+//  EMAIL NOTIFICATIONS
 // ============================================================
 
-// Get random quote
+// Email setup (Replace with your email)
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: 'your-email@gmail.com',    // ← CHANGE THIS
+        pass: 'your-app-password'         // ← CHANGE THIS
+    }
+});
+
+async function sendEmail(to, subject, message, htmlMessage = null) {
+    try {
+        await transporter.sendMail({
+            from: 'your-email@gmail.com',
+            to: to,
+            subject: subject,
+            text: message,
+            html: htmlMessage || `<p>${message.replace(/\n/g, '<br>')}</p>`
+        });
+        console.log(`📧 Email sent to: ${to}`);
+        return true;
+    } catch (error) {
+        console.error('❌ Email error:', error.message);
+        return false;
+    }
+}
+
+async function getClientEmail(planKey) {
+    const result = await pool.query(`
+        SELECT u.email FROM date_plans dp
+        JOIN users u ON dp.user_id = u.id
+        WHERE dp.plan_key = $1
+    `, [planKey]);
+    return result.rows[0]?.email || null;
+}
+
+// ============================================================
+//  API: LOVE QUOTES
+// ============================================================
 app.get('/api/quote/random', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM love_quotes ORDER BY RANDOM() LIMIT 1');
@@ -245,36 +259,9 @@ app.get('/api/quote/random', async (req, res) => {
     }
 });
 
-// Admin - Get all quotes
-app.get('/api/admin/quotes', async (req, res) => {
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== 'NOIR_ADMIN_2026') return res.status(401).json({ error: 'Unauthorized' });
-    try {
-        const result = await pool.query('SELECT * FROM love_quotes ORDER BY RANDOM()');
-        res.json(result.rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Admin - Add quote
-app.post('/api/admin/quotes', async (req, res) => {
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== 'NOIR_ADMIN_2026') return res.status(401).json({ error: 'Unauthorized' });
-    const { quote, author } = req.body;
-    try {
-        await pool.query('INSERT INTO love_quotes (quote, author) VALUES ($1, $2)', [quote, author]);
-        res.json({ success: true, message: 'Quote added' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
 // ============================================================
-//  CREATE PLAN
+//  API: CREATE PLAN (WITH EMAIL)
 // ============================================================
-
-// Create plan - GET (Default: 'Your Date')
 app.get('/api/create-plan', async (req, res) => {
     const { email, recipientName = 'Your Date' } = req.query;
     if (!email) return res.status(400).json({ error: 'Email is required' });
@@ -297,19 +284,33 @@ app.get('/api/create-plan', async (req, res) => {
             'INSERT INTO date_plans (plan_key, user_id, recipient_name) VALUES ($1, $2, $3)',
             [planKey, userId, recipientName]
         );
+
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        const inviteLink = `${baseUrl}/?plan=${planKey}`;
+        const customerLink = `${baseUrl}/customer?plan=${planKey}`;
+        const adminLink = `${baseUrl}/?plan=${planKey}&dashboard=secret`;
+
+        // 📧 SEND EMAIL TO CLIENT WITH LINKS
+        await sendEmail(
+            email,
+            `💛 Your Date Plan for ${recipientName} is Ready!`,
+            `Hi there,\n\nYour date invitation for ${recipientName} is ready! 🎉\n\n🔗 Send this link to ${recipientName}:\n${inviteLink}\n\n📊 Track her response here:\n${customerLink}\n\n🔐 Admin Link (for you):\n${adminLink}\n\nShe'll open it, type her name, and tell you YES! 💛\n\nGood luck!\n- Noir Team`
+        );
+
         res.json({
             success: true,
             planKey: planKey,
-            link: `${req.protocol}://${req.get('host')}/?plan=${planKey}`,
-            adminLink: `${req.protocol}://${req.get('host')}/?plan=${planKey}&dashboard=secret`,
-            customerLink: `${req.protocol}://${req.get('host')}/customer?plan=${planKey}`
+            link: inviteLink,
+            adminLink: adminLink,
+            customerLink: customerLink,
+            emailSent: true,
+            emailTo: email
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// Create plan - POST (Default: 'Your Date')
 app.post('/api/create-plan', async (req, res) => {
     const { email, recipientName = 'Your Date' } = req.body;
     if (!email) return res.status(400).json({ error: 'Email is required' });
@@ -332,12 +333,27 @@ app.post('/api/create-plan', async (req, res) => {
             'INSERT INTO date_plans (plan_key, user_id, recipient_name) VALUES ($1, $2, $3)',
             [planKey, userId, recipientName]
         );
+
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
+        const inviteLink = `${baseUrl}/?plan=${planKey}`;
+        const customerLink = `${baseUrl}/customer?plan=${planKey}`;
+        const adminLink = `${baseUrl}/?plan=${planKey}&dashboard=secret`;
+
+        // 📧 SEND EMAIL TO CLIENT WITH LINKS
+        await sendEmail(
+            email,
+            `💛 Your Date Plan for ${recipientName} is Ready!`,
+            `Hi there,\n\nYour date invitation for ${recipientName} is ready! 🎉\n\n🔗 Send this link to ${recipientName}:\n${inviteLink}\n\n📊 Track her response here:\n${customerLink}\n\n🔐 Admin Link (for you):\n${adminLink}\n\nShe'll open it, type her name, and tell you YES! 💛\n\nGood luck!\n- Noir Team`
+        );
+
         res.json({
             success: true,
             planKey: planKey,
-            link: `${req.protocol}://${req.get('host')}/?plan=${planKey}`,
-            adminLink: `${req.protocol}://${req.get('host')}/?plan=${planKey}&dashboard=secret`,
-            customerLink: `${req.protocol}://${req.get('host')}/customer?plan=${planKey}`
+            link: inviteLink,
+            adminLink: adminLink,
+            customerLink: customerLink,
+            emailSent: true,
+            emailTo: email
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -345,7 +361,7 @@ app.post('/api/create-plan', async (req, res) => {
 });
 
 // ============================================================
-//  GET STATUS
+//  API: GET STATUS
 // ============================================================
 app.get('/api/status/:planKey', async (req, res) => {
     const planKey = req.params.planKey;
@@ -377,7 +393,7 @@ app.get('/api/status/:planKey', async (req, res) => {
 });
 
 // ============================================================
-//  ADMIN - ALL PLANS
+//  API: ADMIN - ALL PLANS (MASTER TRACKER)
 // ============================================================
 app.get('/api/admin/plans', async (req, res) => {
     const adminKey = req.headers['x-admin-key'];
@@ -411,86 +427,41 @@ app.get('/api/admin/plans', async (req, res) => {
 });
 
 // ============================================================
-//  ADMIN - UPDATE PLAN (Fix recipient name)
-// ============================================================
-app.patch('/api/admin/update-plan/:planKey', async (req, res) => {
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== 'NOIR_ADMIN_2026') {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-    
-    const planKey = req.params.planKey;
-    const { recipient_name } = req.body;
-    
-    if (!recipient_name) {
-        return res.status(400).json({ error: 'recipient_name is required' });
-    }
-    
-    try {
-        const result = await pool.query(
-            'UPDATE date_plans SET recipient_name = $1, updated_at = CURRENT_TIMESTAMP WHERE plan_key = $2 RETURNING *',
-            [recipient_name, planKey]
-        );
-        
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Plan not found' });
-        }
-        
-        res.json({ 
-            success: true, 
-            message: 'Updated recipient name',
-            plan: result.rows[0]
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// ============================================================
-//  ADMIN - DELETE PLAN (NEW - FIXED)
+//  API: ADMIN - DELETE PLAN
 // ============================================================
 app.delete('/api/admin/delete-plan/:planKey', async (req, res) => {
     const adminKey = req.headers['x-admin-key'];
     if (adminKey !== 'NOIR_ADMIN_2026') {
         return res.status(401).json({ error: 'Unauthorized' });
     }
-
     const planKey = req.params.planKey;
-
     try {
-        // First delete tracking logs (foreign key constraint)
         await pool.query('DELETE FROM tracking_log WHERE plan_key = $1', [planKey]);
-        
-        // Then delete the plan
         const result = await pool.query('DELETE FROM date_plans WHERE plan_key = $1 RETURNING *', [planKey]);
-        
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Plan not found' });
         }
-        
-        res.json({ 
-            success: true, 
-            message: `Deleted plan: ${planKey}`
-        });
+        res.json({ success: true, message: `Deleted plan: ${planKey}` });
     } catch (err) {
-        console.error('❌ Delete error:', err);
         res.status(500).json({ error: err.message });
     }
 });
 
 // ============================================================
-//  TRACKING - FIXED: viewer_name becomes recipient_name on name_entered
+//  API: TRACKING (WITH EMAIL NOTIFICATIONS)
 // ============================================================
 app.post('/api/track/:planKey', async (req, res) => {
     const planKey = req.params.planKey;
     const { step, data } = req.body;
     const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
     const viewerName = data.viewerName || null;
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
 
     try {
         await pool.query(
-            'INSERT INTO tracking_log (plan_key, step, data, viewer_name) VALUES ($1, $2, $3, $4)',
-            [planKey, step, JSON.stringify(data), viewerName]
+            'INSERT INTO tracking_log (plan_key, step, data, viewer_name, ip, user_agent) VALUES ($1, $2, $3, $4, $5, $6)',
+            [planKey, step, JSON.stringify(data), viewerName, ip, userAgent]
         );
 
         let updateQuery = '', updateParams = [];
@@ -501,50 +472,118 @@ app.post('/api/track/:planKey', async (req, res) => {
                 break;
 
             case 'name_entered':
-                // ✅ FIX: When she enters her name, update BOTH viewer_name AND recipient_name
                 updateQuery = `
                     UPDATE date_plans 
-                    SET viewer_name = $1, 
-                        recipient_name = $1, 
-                        updated_at = $2 
+                    SET viewer_name = $1, recipient_name = $1, updated_at = $2 
                     WHERE plan_key = $3
                 `;
                 updateParams = [viewerName, timestamp, planKey];
-                console.log(`📝 Name entered: "${viewerName}" - Updated recipient_name to match`);
+                console.log(`📝 Name entered: "${viewerName}"`);
+                
+                // 📧 Notify Admin
+                await sendEmail(
+                    'admin@noir.com',
+                    `📝 ${viewerName} entered their name`,
+                    `Plan: ${planKey}\nName: ${viewerName}\nIP: ${ip}`
+                );
                 break;
 
             case 'yes_clicked':
-                // If somehow name wasn't set earlier, set it now
                 updateQuery = `
                     UPDATE date_plans 
-                    SET yes_clicked = TRUE, 
-                        yes_clicked_at = $1, 
-                        updated_at = $2,
+                    SET yes_clicked = TRUE, yes_clicked_at = $1, updated_at = $2,
                         viewer_name = COALESCE(viewer_name, $3),
                         recipient_name = COALESCE(recipient_name, $3)
                     WHERE plan_key = $4
                 `;
                 updateParams = [timestamp, timestamp, viewerName, planKey];
+                
+                // 📧 SEND "SHE SAID YES" NOTIFICATIONS
+                const clientEmailYes = await getClientEmail(planKey);
+                const planResultYes = await pool.query('SELECT recipient_name FROM date_plans WHERE plan_key = $1', [planKey]);
+                const recipientNameYes = planResultYes.rows[0]?.recipient_name || 'Your Date';
+                const statusLinkYes = `https://noir-date-planner.onrender.com/customer?plan=${planKey}`;
+                
+                // To Admin
+                await sendEmail(
+                    'admin@noir.com',
+                    `💛 ${recipientNameYes} said YES!`,
+                    `💛 She said YES!\n\nPlan: ${planKey}\nRecipient: ${recipientNameYes}\nTime: ${new Date().toISOString()}\nIP: ${ip}\n\nCheck dashboard: https://noir-date-planner.onrender.com/admin`
+                );
+                
+                // To Client
+                if (clientEmailYes) {
+                    await sendEmail(
+                        clientEmailYes,
+                        `💛 ${recipientNameYes} said YES! 🎉`,
+                        `💛 ${recipientNameYes} said YES! 🎉\n\nShe's planning the date now!\n\n📊 You'll get the full response when she confirms.\n\nTrack live: ${statusLinkYes}\n\n- Noir Team`
+                    );
+                }
                 break;
 
             case 'vibe_selected':
                 updateQuery = `UPDATE date_plans SET vibe_selected = $1, updated_at = $2 WHERE plan_key = $3`;
                 updateParams = [data.vibe || data.label, timestamp, planKey];
+                
+                // 📧 Notify Admin
+                await sendEmail(
+                    'admin@noir.com',
+                    `🎯 Vibe Selected: ${data.vibe || data.label}`,
+                    `Plan: ${planKey}\nVibe: ${data.vibe || data.label}\nTime: ${new Date().toISOString()}`
+                );
                 break;
 
             case 'place_selected':
                 updateQuery = `UPDATE date_plans SET place_selected = $1, updated_at = $2 WHERE plan_key = $3`;
                 updateParams = [data.place, timestamp, planKey];
+                
+                // 📧 Notify Admin
+                await sendEmail(
+                    'admin@noir.com',
+                    `📍 Place Chosen: ${data.place}`,
+                    `Plan: ${planKey}\nPlace: ${data.place}\nTime: ${new Date().toISOString()}`
+                );
                 break;
 
             case 'date_confirmed':
                 updateQuery = `UPDATE date_plans SET date_confirmed = $1, confirmed_at = $2, updated_at = $3 WHERE plan_key = $4`;
                 updateParams = [data.details, timestamp, timestamp, planKey];
+                
+                // 📧 SEND CUSTOMER STATUS PAGE TO CLIENT
+                const clientEmailConfirm = await getClientEmail(planKey);
+                const planResultConfirm = await pool.query('SELECT recipient_name FROM date_plans WHERE plan_key = $1', [planKey]);
+                const recipientNameConfirm = planResultConfirm.rows[0]?.recipient_name || 'Your Date';
+                const statusLink = `https://noir-date-planner.onrender.com/customer?plan=${planKey}`;
+                
+                // To Admin
+                await sendEmail(
+                    'admin@noir.com',
+                    `📅 ${recipientNameConfirm} Confirmed the Date!`,
+                    `📅 Date Confirmed!\n\nPlan: ${planKey}\nRecipient: ${recipientNameConfirm}\nDetails: ${data.details}\nTime: ${new Date().toISOString()}\n\nCheck dashboard: https://noir-date-planner.onrender.com/admin`
+                );
+                
+                // To Client - THIS IS THE ONE YOU WANT!
+                if (clientEmailConfirm) {
+                    await sendEmail(
+                        clientEmailConfirm,
+                        `💛 ${recipientNameConfirm} said YES! 🎉 - View Her Response`,
+                        `Hi there,\n\n${recipientNameConfirm} said YES! 🎉\n\n📊 View her full response here:\n${statusLink}\n\nDetails:\n${data.details.replace(/ · /g, '\n')}\n\n💛 Congratulations!\n\n- Noir Team`,
+                        `<h2>💛 ${recipientNameConfirm} said YES! 🎉</h2>
+                         <p><strong>📊 View her full response:</strong><br>
+                         <a href="${statusLink}" style="color:#00f0ff;">${statusLink}</a></p>
+                         <p><strong>Details:</strong><br>
+                         ${data.details.replace(/ · /g, '<br>')}</p>
+                         <p>💛 Congratulations!</p>
+                         <p>- Noir Team</p>`
+                    );
+                    console.log(`📧 Customer status email sent to: ${clientEmailConfirm}`);
+                }
                 break;
 
             default:
                 return res.json({ success: true });
         }
+        
         await pool.query(updateQuery, updateParams);
         res.json({ success: true, step, timestamp });
     } catch (err) {
@@ -554,7 +593,7 @@ app.post('/api/track/:planKey', async (req, res) => {
 });
 
 // ============================================================
-//  CUSTOMER STATUS
+//  API: CUSTOMER STATUS
 // ============================================================
 app.get('/customer', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'customer.html'));
@@ -562,7 +601,6 @@ app.get('/customer', (req, res) => {
 
 app.get('/api/customer/status/:planKey', async (req, res) => {
     const planKey = req.params.planKey;
-
     try {
         const result = await pool.query(`
             SELECT recipient_name, page_viewed, yes_clicked,
@@ -615,13 +653,14 @@ app.get('/', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ╔═══════════════════════════════════════════════════════════╗
-║  🚀 DYNAMIC DATE PLANNER SERVER IS RUNNING!              ║
+║  🚀 NOIR DATE PLANNER - COMPLETE SYSTEM RUNNING!        ║
 ║                                                           ║
 ║  📡 Server: http://localhost:${PORT}                      ║
 ║  📊 Admin: http://localhost:${PORT}/admin               ║
 ║  👤 Customer: http://localhost:${PORT}/customer?plan=KEY ║
-║  💛 Auto-Recipient: Viewer name becomes recipient       ║
-║  💛 Love Quotes: 100+ loaded                             ║
+║                                                           ║
+║  📧 Email Notifications: ENABLED                         ║
+║  🌍 IP Tracking: ENABLED                                ║
 ║  🔑 Admin Key: NOIR_ADMIN_2026                           ║
 ║  👤 Admin: admin@noir.com / admin123                     ║
 ║                                                           ║
