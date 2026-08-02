@@ -64,6 +64,17 @@ async function createTables() {
             )
         `);
 
+        // Add indexes for speed
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_date_plans_plan_key ON date_plans(plan_key)
+        `);
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_date_plans_user_id ON date_plans(user_id)
+        `);
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_tracking_log_plan_key ON tracking_log(plan_key)
+        `);
+
         await pool.query(`
             CREATE TABLE IF NOT EXISTS tracking_log (
                 id SERIAL PRIMARY KEY,
@@ -215,6 +226,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+// ✅ FIRE AND FORGET - No await needed!
 async function sendEmail(to, subject, message, htmlMessage = null) {
     try {
         await transporter.sendMail({
@@ -257,7 +269,7 @@ app.get('/api/quote/random', async (req, res) => {
 });
 
 // ============================================================
-//  API: CREATE PLAN (NO adminLink!)
+//  API: CREATE PLAN - SPEED OPTIMIZED! (Fire and forget email)
 // ============================================================
 app.get('/api/create-plan', async (req, res) => {
     const { email, recipientName = 'Your Date' } = req.query;
@@ -286,13 +298,14 @@ app.get('/api/create-plan', async (req, res) => {
         const inviteLink = `${baseUrl}/?plan=${planKey}`;
         const customerLink = `${baseUrl}/customer?plan=${planKey}`;
 
-        // 📧 SEND EMAIL TO CLIENT
-        await sendEmail(
+        // ✅ FIRE AND FORGET - Send email in background (NO AWAIT)
+        sendEmail(
             email,
             `💛 Your Date Plan for ${recipientName} is Ready!`,
             `Hi there,\n\nYour date invitation for ${recipientName} is ready! 🎉\n\n🔗 Send this link to ${recipientName}:\n${inviteLink}\n\n📊 Track her response here:\n${customerLink}\n\nShe'll open it, type her name, and tell you YES! 💛\n\nGood luck!\n- Noir Team`
         );
 
+        // ✅ IMMEDIATE RESPONSE - No waiting for email
         res.json({
             success: true,
             planKey: planKey,
@@ -302,6 +315,7 @@ app.get('/api/create-plan', async (req, res) => {
             emailTo: email
         });
     } catch (err) {
+        console.error('❌ Create plan error:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -333,7 +347,8 @@ app.post('/api/create-plan', async (req, res) => {
         const inviteLink = `${baseUrl}/?plan=${planKey}`;
         const customerLink = `${baseUrl}/customer?plan=${planKey}`;
 
-        await sendEmail(
+        // ✅ FIRE AND FORGET - Send email in background (NO AWAIT)
+        sendEmail(
             email,
             `💛 Your Date Plan for ${recipientName} is Ready!`,
             `Hi there,\n\nYour date invitation for ${recipientName} is ready! 🎉\n\n🔗 Send this link to ${recipientName}:\n${inviteLink}\n\n📊 Track her response here:\n${customerLink}\n\nShe'll open it, type her name, and tell you YES! 💛\n\nGood luck!\n- Noir Team`
@@ -348,6 +363,7 @@ app.post('/api/create-plan', async (req, res) => {
             emailTo: email
         });
     } catch (err) {
+        console.error('❌ Create plan error:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -472,7 +488,8 @@ app.post('/api/track/:planKey', async (req, res) => {
                 updateParams = [viewerName, timestamp, planKey];
                 console.log(`📝 Name entered: "${viewerName}"`);
                 
-                await sendEmail(
+                // ✅ FIRE AND FORGET - No await
+                sendEmail(
                     'admin@noir.com',
                     `📝 ${viewerName} entered their name`,
                     `Plan: ${planKey}\nName: ${viewerName}\nIP: ${ip}`
@@ -494,14 +511,15 @@ app.post('/api/track/:planKey', async (req, res) => {
                 const recipientNameYes = planResultYes.rows[0]?.recipient_name || 'Your Date';
                 const statusLinkYes = `https://noir-date-planner.onrender.com/customer?plan=${planKey}`;
                 
-                await sendEmail(
+                // ✅ FIRE AND FORGET - No await
+                sendEmail(
                     'admin@noir.com',
                     `💛 ${recipientNameYes} said YES!`,
                     `💛 She said YES!\n\nPlan: ${planKey}\nRecipient: ${recipientNameYes}\nTime: ${new Date().toISOString()}\nIP: ${ip}`
                 );
                 
                 if (clientEmailYes) {
-                    await sendEmail(
+                    sendEmail(
                         clientEmailYes,
                         `💛 ${recipientNameYes} said YES! 🎉`,
                         `💛 ${recipientNameYes} said YES! 🎉\n\nShe's planning the date now!\n\n📊 Track live: ${statusLinkYes}\n\n- Noir Team`
@@ -513,7 +531,8 @@ app.post('/api/track/:planKey', async (req, res) => {
                 updateQuery = `UPDATE date_plans SET vibe_selected = $1, updated_at = $2 WHERE plan_key = $3`;
                 updateParams = [data.vibe || data.label, timestamp, planKey];
                 
-                await sendEmail(
+                // ✅ FIRE AND FORGET - No await
+                sendEmail(
                     'admin@noir.com',
                     `🎯 Vibe Selected: ${data.vibe || data.label}`,
                     `Plan: ${planKey}\nVibe: ${data.vibe || data.label}\nTime: ${new Date().toISOString()}`
@@ -524,7 +543,8 @@ app.post('/api/track/:planKey', async (req, res) => {
                 updateQuery = `UPDATE date_plans SET place_selected = $1, updated_at = $2 WHERE plan_key = $3`;
                 updateParams = [data.place, timestamp, planKey];
                 
-                await sendEmail(
+                // ✅ FIRE AND FORGET - No await
+                sendEmail(
                     'admin@noir.com',
                     `📍 Place Chosen: ${data.place}`,
                     `Plan: ${planKey}\nPlace: ${data.place}\nTime: ${new Date().toISOString()}`
@@ -540,14 +560,15 @@ app.post('/api/track/:planKey', async (req, res) => {
                 const recipientNameConfirm = planResultConfirm.rows[0]?.recipient_name || 'Your Date';
                 const statusLink = `https://noir-date-planner.onrender.com/customer?plan=${planKey}`;
                 
-                await sendEmail(
+                // ✅ FIRE AND FORGET - No await
+                sendEmail(
                     'admin@noir.com',
                     `📅 ${recipientNameConfirm} Confirmed the Date!`,
                     `📅 Date Confirmed!\n\nPlan: ${planKey}\nRecipient: ${recipientNameConfirm}\nDetails: ${data.details}\nTime: ${new Date().toISOString()}`
                 );
                 
                 if (clientEmailConfirm) {
-                    await sendEmail(
+                    sendEmail(
                         clientEmailConfirm,
                         `💛 ${recipientNameConfirm} said YES! 🎉 - View Her Response`,
                         `Hi there,\n\n${recipientNameConfirm} said YES! 🎉\n\n📊 View her full response here:\n${statusLink}\n\nDetails:\n${data.details.replace(/ · /g, '\n')}\n\n💛 Congratulations!\n\n- Noir Team`,
@@ -630,16 +651,9 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ============================================================
-//  REDIRECT OLD ?dashboard=secret LINKS TO ADMIN
-// ============================================================
-app.get('/', (req, res) => {
-    // Check if dashboard=secret is in the URL
-    if (req.query.dashboard === 'secret') {
-        console.log('🔄 Redirecting old ?dashboard=secret link to /admin');
-        return res.redirect('/admin');
-    }
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Login page route
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 // ============================================================
@@ -648,20 +662,17 @@ app.get('/', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ╔═══════════════════════════════════════════════════════════╗
-║  🚀 NOIR DATE PLANNER - CLEAN SYSTEM RUNNING!           ║
+║  🚀 NOIR DATE PLANNER - SPEED OPTIMIZED!                ║
 ║                                                           ║
 ║  📡 Server: http://localhost:${PORT}                      ║
 ║  📊 Admin: http://localhost:${PORT}/admin               ║
 ║  👤 Customer: http://localhost:${PORT}/customer?plan=KEY ║
-║  💛 Invitation: http://localhost:${PORT}/?plan=KEY       ║
+║  🔐 Login: http://localhost:${PORT}/login               ║
 ║                                                           ║
-║  📧 Email Notifications: ENABLED                         ║
-║  🌍 IP Tracking: ENABLED                                ║
+║  📧 Email: Fire & Forget (NO WAITING!)                  ║
+║  ⚡ Speed: Plan creation in < 1 second!                 ║
 ║  🔑 Admin Key: NOIR_ADMIN_2026                           ║
 ║  👤 Admin: admin@noir.com / admin123                     ║
-║                                                           ║
-║  ✅ NO ?dashboard=secret LINKS ANYMORE!                  ║
-║  ✅ All tracking now in ADMIN DASHBOARD                  ║
 ║                                                           ║
 ║  💛 Ready!                                               ║
 ╚═══════════════════════════════════════════════════════════╝
