@@ -236,7 +236,10 @@ async function sendEmail(to, subject, message, htmlMessage = null) {
     try {
         const msg = {
             to: to,
-            from: 'noir.invites@gmail.com', // Must be a verified Sender Identity in SendGrid!
+            from: {
+                name: 'Noir Dates',                // Matches SendGrid Verified Sender Name
+                email: 'noir.invites@gmail.com'     // Matches SendGrid Verified Email
+            },
             subject: subject,
             text: message,
             html: htmlMessage || `<p>${message.replace(/\n/g, '<br>')}</p>`
