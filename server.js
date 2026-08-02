@@ -215,14 +215,16 @@ async function createTables() {
 }
 
 // ============================================================
-//  EMAIL NOTIFICATIONS - CONFIGURED WITH noir.invites@gmail.com
+//  EMAIL NOTIFICATIONS - FIXED! (Port 465)
 // ============================================================
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
-        user: 'noir.invites@gmail.com',     // ✅ YOUR DEDICATED EMAIL
-        pass: 'cicy ojvv ssjt innt'          // ✅ YOUR APP PASSWORD
+        user: 'noir.invites@gmail.com',
+        pass: 'cicy ojvv ssjt innt'
     }
 });
 
@@ -230,7 +232,7 @@ const transporter = nodemailer.createTransport({
 async function sendEmail(to, subject, message, htmlMessage = null) {
     try {
         await transporter.sendMail({
-            from: 'noir.invites@gmail.com',  // ✅ SENDER MUST MATCH
+            from: 'noir.invites@gmail.com',
             to: to,
             subject: subject,
             text: message,
@@ -663,6 +665,7 @@ app.listen(PORT, '0.0.0.0', () => {
 ║                                                           ║
 ║  📧 Email: noir.invites@gmail.com  ✅ CORRECT!          ║
 ║  🔑 App Password: cicy ojvv ssjt innt  ✅ SET!          ║
+║  🔌 SMTP Port: 465 (Fixed connection timeout!)          ║
 ║  ⚡ Speed: Fire & Forget (NO WAITING!)                  ║
 ║  🔑 Admin Key: NOIR_ADMIN_2026                           ║
 ║  👤 Admin: admin@noir.com / admin123                     ║
