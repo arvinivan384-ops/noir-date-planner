@@ -215,7 +215,7 @@ async function createTables() {
 }
 
 // ============================================================
-//  EMAIL NOTIFICATIONS - SENDGRID (SECURE - NO HARDCODED KEY!)
+//  EMAIL NOTIFICATIONS - SENDGRID (SECURE!)
 // ============================================================
 
 // ✅ API key comes from Render Environment (NOT hardcoded)
