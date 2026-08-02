@@ -215,14 +215,14 @@ async function createTables() {
 }
 
 // ============================================================
-//  EMAIL NOTIFICATIONS - noir.invites@gmail.com
+//  EMAIL NOTIFICATIONS - CONFIGURED WITH noir.invites@gmail.com
 // ============================================================
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'noir.invites@gmail.com',     // ✅ WITH THE DOT
-        pass: 'cicy ojvv ssjt innt'          // ✅ APP PASSWORD
+        user: 'noir.invites@gmail.com',     // ✅ YOUR DEDICATED EMAIL
+        pass: 'cicy ojvv ssjt innt'          // ✅ YOUR APP PASSWORD
     }
 });
 
@@ -230,7 +230,7 @@ const transporter = nodemailer.createTransport({
 async function sendEmail(to, subject, message, htmlMessage = null) {
     try {
         await transporter.sendMail({
-            from: 'noir.invites@gmail.com',  // ✅ MUST MATCH
+            from: 'noir.invites@gmail.com',  // ✅ SENDER MUST MATCH
             to: to,
             subject: subject,
             text: message,
@@ -662,6 +662,7 @@ app.listen(PORT, '0.0.0.0', () => {
 ║  🔐 Login: http://localhost:${PORT}/login               ║
 ║                                                           ║
 ║  📧 Email: noir.invites@gmail.com  ✅ CORRECT!          ║
+║  🔑 App Password: cicy ojvv ssjt innt  ✅ SET!          ║
 ║  ⚡ Speed: Fire & Forget (NO WAITING!)                  ║
 ║  🔑 Admin Key: NOIR_ADMIN_2026                           ║
 ║  👤 Admin: admin@noir.com / admin123                     ║
