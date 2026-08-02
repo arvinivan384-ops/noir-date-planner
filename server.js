@@ -3,7 +3,7 @@ const cors = require('cors');
 const { Pool } = require('pg');
 const path = require('path');
 const crypto = require('crypto');
-const sgMail = require('@sendgrid/mail');
+const sgMail = require('@sendgrid/mail');  // ← FIXED: @sendgrid
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -215,7 +215,7 @@ async function createTables() {
 }
 
 // ============================================================
-//  EMAIL NOTIFICATIONS - SENDGRID (SECURE!)
+//  EMAIL NOTIFICATIONS - SENDGRID (FIXED!)
 // ============================================================
 
 // ✅ API key comes from Render Environment (NOT hardcoded)
