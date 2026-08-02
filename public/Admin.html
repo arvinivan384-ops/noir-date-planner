@@ -22,6 +22,7 @@
             color: #ffffff;
             overflow-x: hidden;
             background-color: #0b0712;
+            -webkit-tap-highlight-color: transparent;
         }
 
         /* --- BACKGROUND SLIDESHOW --- */
@@ -74,76 +75,77 @@
         /* --- SIDEBAR --- */
         .sidebar {
             width: 240px;
-            background: rgba(18, 10, 28, 0.55);
+            background: rgba(18, 10, 28, 0.75);
             backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(255, 255, 255, 0.04);
-            padding: 25px 15px;
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 20px 15px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
             position: fixed;
             left: 0;
             top: 0;
             bottom: 0;
-            z-index: 20;
+            z-index: 100;
             overflow-y: auto;
-            transition: transform 0.3s ease;
-        }
-
-        .sidebar.closed {
-            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .brand-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
             color: #00f0ff;
             display: flex;
             align-items: center;
             gap: 10px;
+            padding: 5px 10px;
         }
 
         .nav-menu {
             list-style: none;
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            gap: 4px;
         }
 
         .nav-item a {
-            color: rgba(160, 156, 176, 0.8);
+            color: rgba(160, 156, 176, 0.85);
             text-decoration: none;
-            padding: 12px 15px;
-            border-radius: 8px;
+            padding: 10px 14px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             gap: 12px;
-            font-size: 14px;
-            transition: all 0.3s ease;
+            font-size: 13.5px;
+            font-weight: 500;
+            transition: all 0.2s ease;
             cursor: pointer;
             background: rgba(255, 255, 255, 0.02);
             border: 1px solid transparent;
         }
 
         .nav-item.active a, .nav-item a:hover {
-            background: rgba(255, 0, 128, 0.08);
+            background: rgba(255, 0, 128, 0.12);
             color: #ff2a8d;
             border-left: 3px solid #ff2a8d;
-            border-color: rgba(255, 0, 128, 0.1);
+            border-color: rgba(255, 0, 128, 0.15);
         }
 
         .menu-label {
-            font-size: 11px;
+            font-size: 10px;
+            font-weight: 700;
             text-transform: uppercase;
-            color: rgba(93, 87, 107, 0.7);
+            color: rgba(140, 133, 157, 0.6);
             margin-top: 10px;
-            letter-spacing: 1px;
+            padding-left: 8px;
+            letter-spacing: 1.2px;
         }
 
         /* --- MAIN CONTENT --- */
         .main-content {
             flex: 1;
-            padding: 25px 35px;
+            padding: 20px 25px;
             margin-left: 240px;
             transition: margin-left 0.3s ease;
             width: calc(100% - 240px);
@@ -159,30 +161,34 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
         }
 
         .menu-toggle-btn {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
             padding: 8px 12px;
             color: #fff;
             cursor: pointer;
-            font-size: 18px;
+            font-size: 16px;
             display: none;
             backdrop-filter: blur(10px);
+            transition: background 0.2s;
         }
 
-        .menu-toggle-btn:hover {
-            background: rgba(255, 0, 128, 0.08);
+        .menu-toggle-btn:active {
+            background: rgba(255, 0, 128, 0.15);
         }
 
         .breadcrumb {
-            font-size: 14px;
+            font-size: 13px;
             color: rgba(140, 133, 157, 0.8);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .breadcrumb span {
@@ -193,63 +199,64 @@
         .user-info {
             display: flex;
             align-items: center;
-            gap: 15px;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 8px 15px;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            padding: 6px 12px;
             border-radius: 20px;
             backdrop-filter: blur(10px);
-            font-size: 13px;
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .user-badge {
             background: rgba(255, 42, 141, 0.2);
-            font-size: 11px;
-            padding: 3px 10px;
-            border-radius: 10px;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 8px;
             font-weight: bold;
-            border: 1px solid rgba(255, 42, 141, 0.15);
+            border: 1px solid rgba(255, 42, 141, 0.2);
         }
 
         .logout-btn {
-            background: rgba(255, 0, 0, 0.05);
-            border: 1px solid rgba(255, 0, 0, 0.08);
-            color: rgba(255, 107, 107, 0.8);
-            padding: 5px 12px;
-            border-radius: 15px;
+            background: rgba(255, 0, 0, 0.08);
+            border: 1px solid rgba(255, 0, 0, 0.12);
+            color: rgba(255, 120, 120, 0.9);
+            padding: 4px 10px;
+            border-radius: 12px;
             cursor: pointer;
             font-size: 11px;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .logout-btn:hover {
-            background: rgba(255, 0, 0, 0.12);
+            background: rgba(255, 0, 0, 0.18);
             color: #ff6b6b;
         }
 
         /* --- STATS CARDS --- */
         .card-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
         .card {
-            background: rgba(25, 15, 38, 0.35);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            border-radius: 16px;
-            padding: 20px;
+            background: rgba(25, 15, 38, 0.45);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 16px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: transform 0.2s ease, border-color 0.2s ease;
         }
 
         .card:hover {
-            transform: translateY(-3px);
-            border-color: rgba(255, 255, 255, 0.08);
-            background: rgba(25, 15, 38, 0.45);
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.12);
+            background: rgba(25, 15, 38, 0.55);
         }
 
         .stat-card {
@@ -259,72 +266,74 @@
         }
 
         .stat-title {
-            font-size: 12px;
-            color: rgba(160, 156, 176, 0.7);
+            font-size: 11px;
+            color: rgba(160, 156, 176, 0.75);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
         .stat-value {
-            font-size: 28px;
+            font-size: clamp(20px, 4vw, 26px);
             font-weight: 700;
             color: #ffffff;
+            line-height: 1.1;
         }
 
         .stat-icon {
-            font-size: 24px;
-            padding: 12px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.02);
+            font-size: 18px;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.03);
         }
 
         /* --- TRACKER SECTION --- */
         .tracker-section {
             background: rgba(0, 240, 255, 0.03);
-            border: 1px solid rgba(0, 240, 255, 0.08);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 25px;
+            border: 1px solid rgba(0, 240, 255, 0.1);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 20px;
             backdrop-filter: blur(15px);
         }
 
         .tracker-section h2 {
             color: #00f0ff;
-            font-size: 18px;
-            margin-bottom: 15px;
+            font-size: 15px;
+            margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
         }
 
         .tracker-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
         }
 
         .tracker-item {
-            background: rgba(255, 255, 255, 0.02);
-            padding: 15px;
-            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.025);
+            padding: 12px;
+            border-radius: 10px;
             border: 1px solid rgba(255, 255, 255, 0.04);
         }
 
         .tracker-item .label {
-            font-size: 10px;
+            font-size: 9.5px;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #6a5a6a;
+            letter-spacing: 0.05em;
+            color: #8c7d8c;
             font-family: 'JetBrains Mono', monospace;
         }
 
         .tracker-item .value {
-            font-size: 20px;
+            font-size: 15px;
             font-weight: 700;
             margin-top: 4px;
+            word-break: break-word;
         }
 
         .tracker-item .value.pending { color: #e8829f; }
@@ -334,12 +343,11 @@
         /* --- TABLE --- */
         .table-section {
             margin-top: 15px;
-            overflow-x: auto;
         }
 
         .table-section h2 {
-            font-size: 18px;
-            margin-bottom: 15px;
+            font-size: 16px;
+            margin-bottom: 12px;
             color: #00f0ff;
             display: flex;
             justify-content: space-between;
@@ -350,126 +358,131 @@
 
         .table-actions {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
         }
 
         .action-btn {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 8px;
-            padding: 8px 16px;
-            color: rgba(255, 255, 255, 0.7);
+            padding: 6px 12px;
+            color: rgba(255, 255, 255, 0.85);
             cursor: pointer;
             font-size: 12px;
-            transition: all 0.3s ease;
-            display: flex;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             backdrop-filter: blur(10px);
         }
 
         .action-btn:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
             color: #fff;
         }
 
         .action-btn.primary {
-            background: rgba(0, 240, 255, 0.06);
-            border-color: rgba(0, 240, 255, 0.08);
-            color: rgba(0, 240, 255, 0.7);
+            background: rgba(0, 240, 255, 0.08);
+            border-color: rgba(0, 240, 255, 0.15);
+            color: #00f0ff;
         }
 
         .action-btn.primary:hover {
-            background: rgba(0, 240, 255, 0.12);
-            color: #00f0ff;
+            background: rgba(0, 240, 255, 0.18);
         }
 
         .action-btn.success {
-            background: rgba(0, 255, 170, 0.06);
-            border-color: rgba(0, 255, 170, 0.08);
-            color: rgba(0, 255, 170, 0.7);
-        }
-
-        .action-btn.success:hover {
-            background: rgba(0, 255, 170, 0.12);
+            background: rgba(0, 255, 170, 0.08);
+            border-color: rgba(0, 255, 170, 0.15);
             color: #00ffaa;
         }
 
-        .action-btn.danger {
-            background: rgba(255, 0, 0, 0.06);
-            border-color: rgba(255, 0, 0, 0.08);
-            color: rgba(255, 107, 107, 0.7);
+        .action-btn.success:hover {
+            background: rgba(0, 255, 170, 0.18);
         }
 
-        .action-btn.danger:hover {
-            background: rgba(255, 0, 0, 0.12);
+        .action-btn.danger {
+            background: rgba(255, 0, 0, 0.08);
+            border-color: rgba(255, 0, 0, 0.15);
             color: #ff6b6b;
         }
 
-        .action-btn.copy-btn {
-            background: rgba(0, 240, 255, 0.06);
-            border-color: rgba(0, 240, 255, 0.08);
-            color: rgba(0, 240, 255, 0.7);
+        .action-btn.danger:hover {
+            background: rgba(255, 0, 0, 0.18);
         }
 
-        .action-btn.copy-btn:hover {
-            background: rgba(0, 240, 255, 0.12);
+        .action-btn.copy-btn {
+            background: rgba(0, 240, 255, 0.08);
+            border-color: rgba(0, 240, 255, 0.15);
             color: #00f0ff;
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 8px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
-            min-width: 700px;
+            font-size: 12.5px;
+            min-width: 600px;
         }
 
         th {
-            padding: 12px 15px;
-            font-size: 11px;
+            padding: 10px 12px;
+            font-size: 10.5px;
             text-transform: uppercase;
-            color: rgba(140, 133, 157, 0.6);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: rgba(140, 133, 157, 0.7);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             text-align: left;
+            letter-spacing: 0.5px;
         }
 
         td {
-            padding: 12px 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            vertical-align: middle;
         }
 
         .status-badge {
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10.5px;
             font-weight: 600;
             white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .status-yes {
-            background: rgba(0, 255, 170, 0.08);
+            background: rgba(0, 255, 170, 0.1);
             color: #00ffaa;
-            border: 1px solid rgba(0, 255, 170, 0.1);
+            border: 1px solid rgba(0, 255, 170, 0.2);
         }
 
         .status-opened {
-            background: rgba(255, 170, 0, 0.08);
+            background: rgba(255, 170, 0, 0.1);
             color: #ffaa00;
-            border: 1px solid rgba(255, 170, 0, 0.1);
+            border: 1px solid rgba(255, 170, 0, 0.2);
         }
 
         .status-pending {
-            background: rgba(255, 255, 255, 0.02);
-            color: rgba(140, 133, 157, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.04);
+            color: rgba(140, 133, 157, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .loading-text {
             text-align: center;
-            padding: 40px;
-            color: rgba(106, 90, 106, 0.6);
+            padding: 30px;
+            color: rgba(140, 133, 157, 0.6);
         }
 
         /* --- MODAL --- */
@@ -480,11 +493,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.65);
             z-index: 1000;
             justify-content: center;
             align-items: center;
             backdrop-filter: blur(8px);
+            padding: 15px;
         }
 
         .modal-overlay.show {
@@ -492,84 +506,92 @@
         }
 
         .modal {
-            background: rgba(25, 15, 38, 0.75);
+            background: rgba(25, 15, 38, 0.9);
             backdrop-filter: blur(25px);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 20px;
-            padding: 30px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 80vh;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 20px;
+            max-width: 480px;
+            width: 100%;
+            max-height: 85vh;
             overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
         }
 
         .modal h2 {
             color: #00f0ff;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
+            font-size: 18px;
         }
 
         .modal p {
-            color: rgba(160, 156, 176, 0.8);
+            color: rgba(160, 156, 176, 0.85);
             margin-bottom: 10px;
-            line-height: 1.6;
+            line-height: 1.5;
+            font-size: 13px;
         }
 
         .modal input {
             width: 100%;
-            padding: 10px;
+            padding: 10px 12px;
             border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.04);
             color: #fff;
-            font-size: 14px;
-            transition: all 0.3s ease;
+            font-size: 13.5px;
+            transition: all 0.2s ease;
         }
 
         .modal input:focus {
             outline: none;
-            border-color: rgba(0, 240, 255, 0.15);
-            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(0, 240, 255, 0.3);
+            background: rgba(255, 255, 255, 0.07);
         }
 
         .modal .close-btn {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 8px;
-            padding: 8px 20px;
-            color: rgba(255, 255, 255, 0.6);
+            padding: 8px 16px;
+            color: rgba(255, 255, 255, 0.7);
             cursor: pointer;
             margin-top: 15px;
             float: right;
+            font-size: 12px;
         }
 
         .modal .close-btn:hover {
-            background: rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.1);
             color: #fff;
         }
 
         /* Toast notification */
         .toast {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
-            padding: 16px 24px;
-            border-radius: 12px;
+            bottom: 20px;
+            right: 20px;
+            left: 20px;
+            margin: 0 auto;
+            padding: 12px 18px;
+            border-radius: 10px;
             background: #1a1122;
             border: 1px solid rgba(0, 240, 255, 0.3);
             color: #f2ebe6;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            backdrop-filter: blur(8px);
-            z-index: 1000;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+            z-index: 2000;
             animation: slideUp 0.3s ease forwards;
-            max-width: 400px;
+            max-width: 360px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
 
         .toast.success { border-color: #8fd0a5; }
         .toast.error { border-color: #e8829f; }
 
         @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -583,11 +605,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.75);
             z-index: 9999;
             justify-content: center;
             align-items: center;
             backdrop-filter: blur(15px);
+            padding: 15px;
         }
 
         .login-overlay.show {
@@ -597,29 +620,29 @@
         .login-modal {
             background: rgba(20, 14, 27, 0.95);
             backdrop-filter: blur(25px);
-            border: 1px solid rgba(238, 207, 143, 0.15);
-            border-radius: 24px;
-            padding: 45px 40px;
-            max-width: 440px;
+            border: 1px solid rgba(238, 207, 143, 0.18);
+            border-radius: 20px;
+            padding: 30px 25px;
+            max-width: 380px;
             width: 100%;
-            box-shadow: 0 25px 60px -20px #000000cc;
-            animation: fadeIn 0.8s ease forwards;
+            box-shadow: 0 20px 50px -10px #000000;
+            animation: fadeIn 0.4s ease forwards;
         }
 
         .login-modal .login-header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
 
         .login-modal .login-header .icon {
-            font-size: 48px;
+            font-size: 36px;
             color: #eecf8f;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
 
         .login-modal .login-header h1 {
             font-family: 'Playfair Display', serif;
-            font-size: 32px;
+            font-size: 26px;
             font-weight: 700;
             background: linear-gradient(135deg, #fcf5f0 20%, #eecf8f 55%, #e8829f 85%);
             -webkit-background-clip: text;
@@ -629,23 +652,23 @@
 
         .login-modal .login-header p {
             color: rgba(160, 156, 176, 0.7);
-            font-size: 14px;
-            margin-top: 5px;
+            font-size: 13px;
+            margin-top: 4px;
         }
 
         .login-modal .form-group {
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            margin-bottom: 15px;
+            gap: 5px;
+            margin-bottom: 12px;
         }
 
         .login-modal .form-group label {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             color: rgba(160, 156, 176, 0.8);
             text-transform: uppercase;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.05em;
             font-family: 'JetBrains Mono', monospace;
         }
 
@@ -659,94 +682,84 @@
             position: absolute;
             left: 14px;
             color: rgba(160, 156, 176, 0.4);
-            font-size: 16px;
+            font-size: 14px;
         }
 
         .login-modal .form-group input {
             width: 100%;
-            padding: 12px 16px 12px 44px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 10px 14px 10px 40px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
             background: rgba(255, 255, 255, 0.03);
             color: #fff;
-            font-size: 15px;
-            transition: all 0.3s ease;
+            font-size: 14px;
+            transition: all 0.2s ease;
             outline: none;
         }
 
         .login-modal .form-group input:focus {
             border-color: rgba(238, 207, 143, 0.3);
             background: rgba(255, 255, 255, 0.06);
-            box-shadow: 0 0 30px rgba(238, 207, 143, 0.03);
         }
 
         .login-modal .form-options {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin: 10px 0 15px;
+            margin: 8px 0 12px;
         }
 
         .login-modal .form-options label {
-            font-size: 13px;
-            color: rgba(160, 156, 176, 0.6);
+            font-size: 12px;
+            color: rgba(160, 156, 176, 0.7);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             cursor: pointer;
-        }
-
-        .login-modal .form-options label input[type="checkbox"] {
-            accent-color: #eecf8f;
-            width: 16px;
-            height: 16px;
         }
 
         .login-modal .error-message {
             display: none;
-            background: rgba(232, 130, 159, 0.08);
-            border: 1px solid rgba(232, 130, 159, 0.15);
-            border-radius: 10px;
-            padding: 12px 16px;
+            background: rgba(232, 130, 159, 0.1);
+            border: 1px solid rgba(232, 130, 159, 0.2);
+            border-radius: 8px;
+            padding: 10px 12px;
             color: #e8829f;
-            font-size: 13px;
+            font-size: 12px;
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .login-modal .error-message.show {
             display: block;
-            animation: shake 0.4s ease;
+            animation: shake 0.3s ease;
         }
 
         .login-modal .login-btn {
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             background: linear-gradient(135deg, #eecf8f, #d9b25f);
             color: #1a0f18;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 25px rgba(217, 178, 95, 0.3);
+            transition: all 0.2s ease;
+            box-shadow: 0 6px 20px rgba(217, 178, 95, 0.25);
             font-family: 'Playfair Display', serif;
-            letter-spacing: 0.02em;
         }
 
-        .login-modal .login-btn:hover {
-            transform: scale(1.01);
-            box-shadow: 0 12px 35px rgba(217, 178, 95, 0.4);
+        .login-modal .login-btn:active {
+            transform: scale(0.98);
         }
 
         .login-modal .login-footer {
             text-align: center;
-            margin-top: 20px;
-            font-size: 12px;
-            color: rgba(106, 90, 106, 0.6);
+            margin-top: 15px;
+            font-size: 11px;
+            color: rgba(140, 133, 157, 0.6);
             font-family: 'JetBrains Mono', monospace;
-            letter-spacing: 0.04em;
         }
 
         .login-modal .login-footer .heart {
@@ -754,19 +767,20 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(30px); }
+            from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-8px); }
-            75% { transform: translateX(8px); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
 
         /* --- SCROLLBAR --- */
         ::-webkit-scrollbar {
             width: 4px;
+            height: 4px;
         }
         ::-webkit-scrollbar-track {
             background: transparent;
@@ -776,86 +790,59 @@
             border-radius: 10px;
         }
 
-        /* --- RESPONSIVE --- */
+        /* --- MOBILE RESPONSIVE OVERRIDES --- */
         @media (max-width: 768px) {
             .sidebar {
                 transform: translateX(-100%);
-                width: 280px;
-                background: rgba(18, 10, 28, 0.75);
+                width: 250px;
+                background: rgba(18, 10, 28, 0.92);
             }
 
             .sidebar.open {
                 transform: translateX(0);
+                box-shadow: 10px 0 30px rgba(0,0,0,0.5);
             }
 
             .main-content {
                 margin-left: 0;
-                padding: 15px;
+                padding: 12px;
                 width: 100%;
             }
 
             .menu-toggle-btn {
-                display: block;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
 
             .card-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 12px;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
             }
 
             .tracker-grid {
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .tracker-item[style*="grid-column: span 2"] {
+                grid-column: span 2;
             }
 
             .top-bar {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 8px;
+                margin-bottom: 15px;
             }
 
-            .user-info {
-                font-size: 12px;
-                padding: 6px 12px;
+            .user-info span:not(.user-badge) {
+                display: none; /* Hide admin email text on narrow devices to clear space */
             }
 
             .stat-value {
-                font-size: 22px;
-            }
-
-            table {
-                font-size: 11px;
-                min-width: 500px;
-            }
-            th, td {
-                padding: 8px 10px;
-            }
-
-            .login-modal {
-                padding: 30px 20px;
-                margin: 20px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .card-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 8px;
-            }
-
-            .tracker-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .stat-value {
-                font-size: 18px;
-            }
-
-            .stat-title {
-                font-size: 10px;
+                font-size: 20px;
             }
 
             .stat-icon {
-                font-size: 16px;
+                font-size: 15px;
                 padding: 8px;
             }
 
@@ -864,27 +851,35 @@
             }
 
             .table-actions {
-                flex-direction: column;
                 width: 100%;
+            }
+
+            .table-actions .action-btn {
+                flex: 1;
+                font-size: 11px;
+                padding: 6px 8px;
             }
 
             .action-btn {
-                justify-content: center;
-                width: 100%;
-            }
-
-            .modal {
-                padding: 20px;
-            }
-
-            .login-modal {
-                padding: 25px 15px;
+                font-size: 11px;
             }
         }
 
-        @media (min-width: 769px) {
-            .menu-toggle-btn {
-                display: none;
+        @media (max-width: 420px) {
+            .card-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .stat-title {
+                font-size: 9.5px;
+            }
+
+            .stat-value {
+                font-size: 18px;
+            }
+
+            .tracker-section h2, .table-section h2 {
+                font-size: 14px;
             }
         }
     </style>
@@ -998,7 +993,7 @@
 
             <!-- TOP BAR -->
             <header class="top-bar">
-                <div style="display:flex;align-items:center;gap:12px;">
+                <div style="display:flex;align-items:center;gap:10px;">
                     <button class="menu-toggle-btn" onclick="toggleSidebar()">
                         <i class="fas fa-bars"></i>
                     </button>
@@ -1016,13 +1011,11 @@
             <!-- SECTION: DASHBOARD -->
             <div id="section-dashboard">
 
-                <!-- =========================================================
-                     LIVE TRACKER
-                     ========================================================= -->
+                <!-- LIVE TRACKER -->
                 <div class="tracker-section">
                     <h2>
                         <span>📊 LIVE TRACKING · YOUR DATE</span>
-                        <button class="action-btn primary" onclick="refreshTracker()" style="font-size:11px; padding:4px 12px;">
+                        <button class="action-btn primary" onclick="refreshTracker()" style="font-size:10px; padding:3px 8px;">
                             <i class="fas fa-sync-alt"></i> Refresh
                         </button>
                     </h2>
@@ -1048,7 +1041,7 @@
                             <div class="value pending" id="trackConfirm">⏳ loading...</div>
                         </div>
                     </div>
-                    <div style="text-align:right; margin-top:10px; font-size:10px; color:#6a5a6a; font-family:'JetBrains Mono',monospace;">
+                    <div style="text-align:right; margin-top:8px; font-size:9.5px; color:#8c7d8c; font-family:'JetBrains Mono',monospace;">
                         <span id="trackerTimestamp">Last update: —</span>
                     </div>
                 </div>
@@ -1104,7 +1097,7 @@
                             </button>
                         </div>
                     </h2>
-                    <div style="overflow-x: auto;">
+                    <div class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
@@ -1127,9 +1120,9 @@
 
             <!-- SECTION: RESPONSES -->
             <div id="section-responses" style="display:none;">
-                <h2 style="color:#00f0ff;margin-bottom:15px;">💛 All Responses</h2>
+                <h2 style="color:#00f0ff;margin-bottom:12px;font-size:18px;">💛 All Responses</h2>
                 <div class="card table-section">
-                    <div style="overflow-x:auto;">
+                    <div class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
@@ -1153,9 +1146,9 @@
 
             <!-- SECTION: CUSTOMERS -->
             <div id="section-customers" style="display:none;">
-                <h2 style="color:#00f0ff;margin-bottom:15px;">👥 Customers</h2>
+                <h2 style="color:#00f0ff;margin-bottom:12px;font-size:18px;">👥 Customers</h2>
                 <div class="card table-section">
-                    <div style="overflow-x:auto;">
+                    <div class="table-responsive">
                         <table>
                             <thead>
                                 <tr>
@@ -1175,7 +1168,7 @@
 
             <!-- SECTION: ANALYTICS -->
             <div id="section-analytics" style="display:none;">
-                <h2 style="color:#00f0ff;margin-bottom:15px;">📊 Analytics</h2>
+                <h2 style="color:#00f0ff;margin-bottom:12px;font-size:18px;">📊 Analytics</h2>
                 <div class="card-grid">
                     <div class="card">
                         <div class="stat-title">Total Plans</div>
@@ -1198,11 +1191,11 @@
 
             <!-- SECTION: ACCOUNT -->
             <div id="section-account" style="display:none;">
-                <h2 style="color:#00f0ff;margin-bottom:15px;">⚙️ Account Settings</h2>
+                <h2 style="color:#00f0ff;margin-bottom:12px;font-size:18px;">⚙️ Account Settings</h2>
                 <div class="card" style="max-width:500px;">
-                    <p style="color:rgba(160,156,176,0.8);margin-bottom:15px;">Admin Account: <strong style="color:#fff;">admin@noir.com</strong></p>
-                    <p style="color:rgba(160,156,176,0.8);margin-bottom:15px;">Role: <span class="user-badge"><i class="fas fa-shield-alt"></i> ADMIN</span></p>
-                    <button class="action-btn" onclick="if(confirm('Reset all data?')){resetAll();}" style="color:rgba(255,107,107,0.7);border-color:rgba(255,107,107,0.1);">
+                    <p style="color:rgba(160,156,176,0.8);margin-bottom:12px;font-size:13px;">Admin Account: <strong style="color:#fff;">admin@noir.com</strong></p>
+                    <p style="color:rgba(160,156,176,0.8);margin-bottom:12px;font-size:13px;">Role: <span class="user-badge"><i class="fas fa-shield-alt"></i> ADMIN</span></p>
+                    <button class="action-btn danger" onclick="if(confirm('Reset all data?')){resetAll();}">
                         <i class="fas fa-trash"></i> Reset All Data
                     </button>
                 </div>
@@ -1216,17 +1209,19 @@
         <div class="modal">
             <h2><i class="fas fa-plus"></i> Create New Plan</h2>
             <p>Enter customer email and recipient name to generate a unique link.</p>
-            <div style="margin:15px 0;">
-                <label style="color:rgba(160,156,176,0.7);display:block;margin-bottom:5px;">Customer Email</label>
+            <div style="margin:12px 0;">
+                <label style="color:rgba(160,156,176,0.7);display:block;margin-bottom:4px;font-size:11px;text-transform:uppercase;">Customer Email</label>
                 <input type="email" id="newPlanEmail" placeholder="customer@email.com">
             </div>
-            <div style="margin:15px 0;">
-                <label style="color:rgba(160,156,176,0.7);display:block;margin-bottom:5px;">Recipient Name</label>
+            <div style="margin:12px 0;">
+                <label style="color:rgba(160,156,176,0.7);display:block;margin-bottom:4px;font-size:11px;text-transform:uppercase;">Recipient Name</label>
                 <input type="text" id="newPlanRecipient" placeholder="Radhia" value="Radhia">
             </div>
-            <div id="newPlanResult" style="display:none;background:rgba(0,240,255,0.03);border:1px solid rgba(0,240,255,0.06);border-radius:8px;padding:10px;margin:10px 0;word-break:break-all;color:#00f0ff;font-size:13px;"></div>
-            <button class="action-btn primary" onclick="createNewPlan()"><i class="fas fa-check"></i> Generate Link</button>
-            <button class="close-btn" onclick="closeModal('createPlanModal')">Close</button>
+            <div id="newPlanResult" style="display:none;background:rgba(0,240,255,0.03);border:1px solid rgba(0,240,255,0.1);border-radius:8px;padding:10px;margin:10px 0;word-break:break-all;color:#00f0ff;font-size:12px;"></div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:15px;">
+                <button class="action-btn primary" onclick="createNewPlan()"><i class="fas fa-check"></i> Generate Link</button>
+                <button class="close-btn" onclick="closeModal('createPlanModal')" style="margin-top:0;">Close</button>
+            </div>
         </div>
     </div>
 
@@ -1244,20 +1239,14 @@
     <!-- Toast Notification -->
     <div class="toast hidden" id="toast"></div>
 
-    <!-- =========================================================
-         JAVASCRIPT - EVERYTHING INCLUDED
-         ========================================================= -->
+    <!-- JAVASCRIPT -->
     <script>
-        // ============================================================
-        //  CHECK LOGIN - Show Login Modal if Not Logged In
-        // ============================================================
+        // CHECK LOGIN
         if (!sessionStorage.getItem('adminLoggedIn') && !localStorage.getItem('adminLoggedIn')) {
             document.getElementById('loginOverlay').classList.add('show');
         }
 
-        // ============================================================
-        //  ADMIN LOGIN (Inside Dashboard)
-        // ============================================================
+        // ADMIN LOGIN
         function handleAdminLogin(event) {
             event.preventDefault();
 
@@ -1287,16 +1276,13 @@
             return false;
         }
 
-        // Close login overlay on Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 document.getElementById('loginOverlay').classList.remove('show');
             }
         });
 
-        // ============================================================
-        //  LOGOUT - Show Login Modal Instead of Redirect
-        // ============================================================
+        // LOGOUT
         function logout() {
             if (confirm('Are you sure you want to logout?')) {
                 sessionStorage.clear();
@@ -1306,9 +1292,7 @@
             }
         }
 
-        // ============================================================
-        //  SLIDESHOW
-        // ============================================================
+        // SLIDESHOW
         const slides = document.querySelectorAll('.slide');
         let currentSlideIndex = 0;
         const transitionSpeed = 4000;
@@ -1320,9 +1304,7 @@
         }
         setInterval(changeSlide, transitionSpeed);
 
-        // ============================================================
-        //  SIDEBAR TOGGLE
-        // ============================================================
+        // SIDEBAR TOGGLE
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('open');
@@ -1338,9 +1320,7 @@
             }
         });
 
-        // ============================================================
-        //  TOAST NOTIFICATION
-        // ============================================================
+        // TOAST NOTIFICATION
         function showToast(message, type = '') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -1352,9 +1332,7 @@
             }, 3000);
         }
 
-        // ============================================================
-        //  SECTION NAVIGATION
-        // ============================================================
+        // SECTION NAVIGATION
         function showSection(section) {
             document.querySelectorAll('[id^="section-"]').forEach(el => el.style.display = 'none');
             const target = document.getElementById('section-' + section);
@@ -1391,9 +1369,7 @@
             }
         }
 
-        // ============================================================
-        //  MODAL
-        // ============================================================
+        // MODAL
         function showModal(type) {
             if (type === 'createPlan') {
                 document.getElementById('createPlanModal').classList.add('show');
@@ -1415,9 +1391,7 @@
             });
         });
 
-        // ============================================================
-        //  CREATE NEW PLAN
-        // ============================================================
+        // CREATE NEW PLAN
         async function createNewPlan() {
             const email = document.getElementById('newPlanEmail').value.trim();
             const recipientName = document.getElementById('newPlanRecipient').value.trim() || 'Your Date';
@@ -1441,9 +1415,9 @@
                         ✅ Plan created successfully!<br>
                         <strong>Plan Key:</strong> ${data.planKey}<br><br>
                         <strong>📤 Send to Girl:</strong><br>
-                        <span style="font-size:12px;word-break:break-all;">${baseUrl}/?plan=${data.planKey}</span><br><br>
+                        <span style="font-size:11px;word-break:break-all;">${baseUrl}/?plan=${data.planKey}</span><br><br>
                         <strong>📊 Client Status:</strong><br>
-                        <span style="font-size:12px;word-break:break-all;">${baseUrl}/customer?plan=${data.planKey}</span><br><br>
+                        <span style="font-size:11px;word-break:break-all;">${baseUrl}/customer?plan=${data.planKey}</span><br><br>
                         <button class="action-btn success" onclick="copyPlanLinks('${data.planKey}')" style="margin-top:8px;">
                             <i class="fas fa-copy"></i> Copy All Links
                         </button>
@@ -1459,9 +1433,7 @@
             }
         }
 
-        // ============================================================
-        //  COPY PLAN LINKS
-        // ============================================================
+        // COPY PLAN LINKS
         function copyPlanLinks(planKey) {
             const baseUrl = 'https://noir-date-planner.onrender.com';
             const inviteLink = `${baseUrl}/?plan=${planKey}`;
@@ -1483,9 +1455,7 @@
             });
         }
 
-        // ============================================================
-        //  DELETE PLAN
-        // ============================================================
+        // DELETE PLAN
         async function deletePlan(key) {
             if (!confirm('🗑️ Delete this response?')) return;
 
@@ -1509,9 +1479,7 @@
             }
         }
 
-        // ============================================================
-        //  TRACKER FUNCTIONS
-        // ============================================================
+        // TRACKER FUNCTIONS
         let trackerData = {
             pageViewed: false,
             yesClicked: false,
@@ -1569,18 +1537,18 @@
                     yesEl.className = yesCount > 0 ? 'value yes' : 'value pending';
                     
                     const vibeEl = document.getElementById('trackVibe');
-                    vibeEl.textContent = uniqueVibes.length > 0 ? `🎯 ${uniqueVibes.slice(0, 3).join(', ')}${uniqueVibes.length > 3 ? '...' : ''}` : '⏳ none yet';
+                    vibeEl.textContent = uniqueVibes.length > 0 ? `🎯 ${uniqueVibes.slice(0, 2).join(', ')}${uniqueVibes.length > 2 ? '...' : ''}` : '⏳ none yet';
                     vibeEl.className = uniqueVibes.length > 0 ? 'value done' : 'value pending';
                     
                     const placeEl = document.getElementById('trackPlace');
-                    placeEl.textContent = uniquePlaces.length > 0 ? `📍 ${uniquePlaces.slice(0, 3).join(', ')}${uniquePlaces.length > 3 ? '...' : ''}` : '⏳ none yet';
+                    placeEl.textContent = uniquePlaces.length > 0 ? `📍 ${uniquePlaces.slice(0, 2).join(', ')}${uniquePlaces.length > 2 ? '...' : ''}` : '⏳ none yet';
                     placeEl.className = uniquePlaces.length > 0 ? 'value done' : 'value pending';
                     
                     const confirmEl = document.getElementById('trackConfirm');
                     confirmEl.textContent = confirmed > 0 ? `✅ ${confirmed} confirmed` : '⏳ 0 confirmed';
                     confirmEl.className = confirmed > 0 ? 'value done' : 'value pending';
                     
-                    document.getElementById('trackerTimestamp').textContent = `📊 ${plans.length} plans • Updated: ${new Date().toLocaleString()}`;
+                    document.getElementById('trackerTimestamp').textContent = `📊 ${plans.length} plans • Updated: ${new Date().toLocaleTimeString()}`;
                     
                 } catch (error) {
                     console.error('Tracker error:', error);
@@ -1638,17 +1606,17 @@
             }
             if (timestampEl) {
                 timestampEl.textContent = trackerData.lastUpdate 
-                    ? `Last update: ${new Date(trackerData.lastUpdate).toLocaleString()}`
+                    ? `Last update: ${new Date(trackerData.lastUpdate).toLocaleTimeString()}`
                     : 'Last update: —';
             }
         }
 
-        // --- DASHBOARD DATA ---
+        // DASHBOARD DATA
         const ADMIN_KEY = 'NOIR_ADMIN_2026';
 
         async function loadData() {
             const tbody = document.getElementById('plansBody');
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:rgba(106,90,106,0.6);"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:rgba(140,133,157,0.6);"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
 
             try {
                 const response = await fetch('/api/admin/plans', {
@@ -1661,7 +1629,7 @@
                 refreshTracker();
             } catch (error) {
                 console.error('Error loading data:', error);
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:rgba(232,130,159,0.6);">❌ ${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;color:rgba(232,130,159,0.6);">❌ ${error.message}</td></tr>`;
             }
         }
 
@@ -1674,7 +1642,7 @@
 
             const tbody = document.getElementById('plansBody');
             if (plans.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:rgba(106,90,106,0.6);">No plans yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:rgba(140,133,157,0.6);">No plans yet</td></tr>';
                 return;
             }
 
@@ -1690,20 +1658,20 @@
                 const confirmedText = plan.date_confirmed ? '✅ Yes' : '⏳ Pending';
                 return `
                     <tr>
-                        <td style="font-size:12px;color:rgba(160,156,176,0.7);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.user_email || 'Unknown'}</td>
+                        <td style="font-size:11px;color:rgba(160,156,176,0.7);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.user_email || 'Unknown'}</td>
                         <td>${plan.recipient || 'Radhia'}</td>
                         <td>${statusBadge}</td>
                         <td>${plan.vibe || '—'}</td>
-                        <td style="font-size:12px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.place || '—'}</td>
+                        <td style="font-size:11px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.place || '—'}</td>
                         <td>${confirmedText}</td>
                         <td style="text-align:center;white-space:nowrap;">
-                            <button class="action-btn copy-btn" onclick="copyPlanLinks('${plan.plan_key}')" style="padding:4px 8px;font-size:10px;" title="Copy Links">
+                            <button class="action-btn copy-btn" onclick="copyPlanLinks('${plan.plan_key}')" style="padding:3px 6px;font-size:9.5px;" title="Copy Links">
                                 <i class="fas fa-copy"></i>
                             </button>
-                            <button class="action-btn" onclick="viewPlan('${plan.plan_key}')" style="padding:4px 8px;font-size:10px;" title="View Details">
+                            <button class="action-btn" onclick="viewPlan('${plan.plan_key}')" style="padding:3px 6px;font-size:9.5px;" title="View Details">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button class="action-btn danger" onclick="deletePlan('${plan.plan_key}')" style="padding:4px 8px;font-size:10px;" title="Delete">
+                            <button class="action-btn danger" onclick="deletePlan('${plan.plan_key}')" style="padding:3px 6px;font-size:9.5px;" title="Delete">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>
@@ -1712,7 +1680,7 @@
             }).join('');
         }
 
-        // --- VIEW PLAN DETAILS ---
+        // VIEW PLAN DETAILS
         async function viewPlan(planKey) {
             const modal = document.getElementById('planDetailModal');
             const content = document.getElementById('planDetailContent');
@@ -1731,11 +1699,11 @@
                     <p><strong>Place:</strong> ${data.place_selected || '—'}</p>
                     <p><strong>Date Confirmed:</strong> ${data.date_confirmed || '—'}</p>
                     <p><strong>Updated:</strong> ${data.updated_at ? new Date(data.updated_at).toLocaleString() : '—'}</p>
-                    <hr style="border-color:rgba(255,255,255,0.1);margin:15px 0;">
+                    <hr style="border-color:rgba(255,255,255,0.08);margin:12px 0;">
                     <p><strong>📤 Send to Girl:</strong><br>
-                    <span style="font-size:12px;word-break:break-all;color:#00f0ff;">${baseUrl}/?plan=${planKey}</span></p>
+                    <span style="font-size:11px;word-break:break-all;color:#00f0ff;">${baseUrl}/?plan=${planKey}</span></p>
                     <p><strong>📊 Client Status:</strong><br>
-                    <span style="font-size:12px;word-break:break-all;color:#00f0ff;">${baseUrl}/customer?plan=${planKey}</span></p>
+                    <span style="font-size:11px;word-break:break-all;color:#00f0ff;">${baseUrl}/customer?plan=${planKey}</span></p>
                     <button class="action-btn success" onclick="copyPlanLinks('${planKey}')" style="margin-top:10px;">
                         <i class="fas fa-copy"></i> Copy All Links
                     </button>
@@ -1745,7 +1713,7 @@
             }
         }
 
-        // --- EXPORT DATA ---
+        // EXPORT DATA
         function exportData() {
             const table = document.querySelector('table');
             const rows = table.querySelectorAll('tr');
@@ -1772,10 +1740,10 @@
             URL.revokeObjectURL(url);
         }
 
-        // --- LOAD RESPONSES ---
+        // LOAD RESPONSES
         async function loadResponses() {
             const tbody = document.getElementById('responsesBody');
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:rgba(106,90,106,0.6);"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:rgba(140,133,157,0.6);"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
             
             try {
                 const response = await fetch('/api/admin/plans', {
@@ -1785,31 +1753,31 @@
                 const plans = data.plans || [];
                 
                 if (plans.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:rgba(106,90,106,0.6);">No responses yet</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:rgba(140,133,157,0.6);">No responses yet</td></tr>';
                     return;
                 }
                 
                 tbody.innerHTML = plans.map(plan => `
                     <tr>
-                        <td style="font-size:12px;color:rgba(160,156,176,0.7);">${plan.user_email || 'Unknown'}</td>
+                        <td style="font-size:11px;color:rgba(160,156,176,0.7);">${plan.user_email || 'Unknown'}</td>
                         <td>${plan.recipient || 'Radhia'}</td>
                         <td>${plan.page_viewed ? '✅' : '⏳'}</td>
                         <td>${plan.yes_clicked ? '💛' : '⏳'}</td>
                         <td>${plan.vibe || '—'}</td>
-                        <td style="font-size:12px;">${plan.place || '—'}</td>
+                        <td style="font-size:11px;">${plan.place || '—'}</td>
                         <td>${plan.date_confirmed ? '✅' : '⏳'}</td>
-                        <td style="font-size:11px;color:rgba(106,90,106,0.6);">${plan.created_at ? new Date(plan.created_at).toLocaleDateString() : '—'}</td>
+                        <td style="font-size:10px;color:rgba(140,133,157,0.6);">${plan.created_at ? new Date(plan.created_at).toLocaleDateString() : '—'}</td>
                     </tr>
                 `).join('');
             } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:30px;color:rgba(232,130,159,0.6);">❌ Error loading</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:20px;color:rgba(232,130,159,0.6);">❌ Error loading</td></tr>`;
             }
         }
 
-        // --- LOAD CUSTOMERS ---
+        // LOAD CUSTOMERS
         async function loadCustomers() {
             const tbody = document.getElementById('customersBody');
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(106,90,106,0.6);"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:rgba(140,133,157,0.6);"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
             
             try {
                 const response = await fetch('/api/admin/plans', {
@@ -1835,7 +1803,7 @@
                 }));
                 
                 if (customerArray.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(106,90,106,0.6);">No customers yet</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:20px;color:rgba(140,133,157,0.6);">No customers yet</td></tr>';
                     return;
                 }
                 
@@ -1844,15 +1812,15 @@
                         <td style="color:rgba(160,156,176,0.7);">${c.email}</td>
                         <td>${c.plans}</td>
                         <td>${c.yes}</td>
-                        <td style="font-size:11px;color:rgba(106,90,106,0.6);">${c.joined ? new Date(c.joined).toLocaleDateString() : '—'}</td>
+                        <td style="font-size:10px;color:rgba(140,133,157,0.6);">${c.joined ? new Date(c.joined).toLocaleDateString() : '—'}</td>
                     </tr>
                 `).join('');
             } catch (error) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:30px;color:rgba(232,130,159,0.6);">❌ Error loading</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:20px;color:rgba(232,130,159,0.6);">❌ Error loading</td></tr>`;
             }
         }
 
-        // --- LOAD ANALYTICS ---
+        // LOAD ANALYTICS
         async function loadAnalytics() {
             try {
                 const response = await fetch('/api/admin/plans', {
@@ -1889,7 +1857,7 @@
             }
         }
 
-        // --- RESET ALL DATA ---
+        // RESET ALL DATA
         async function resetAll() {
             try {
                 await fetch('/api/reset/default', { method: 'POST' });
@@ -1903,17 +1871,14 @@
             }
         }
 
-        // ============================================================
-        //  INITIALIZE
-        // ============================================================
+        // INITIALIZE
         showSection('dashboard');
         loadData();
 
-        // Auto-refresh every 15 seconds
         setInterval(() => {
             loadData();
             refreshTracker();
         }, 15000);
     </script>
 </body>
-</html>
+</html>  preview this page
