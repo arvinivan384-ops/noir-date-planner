@@ -3,7 +3,7 @@ const cors = require('cors');
 const { Pool } = require('pg');
 const path = require('path');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -215,29 +215,22 @@ async function createTables() {
 }
 
 // ============================================================
-//  EMAIL NOTIFICATIONS - FIXED! (Port 465)
+//  EMAIL NOTIFICATIONS - SENDGRID (SECURE - NO HARDCODED KEY!)
 // ============================================================
 
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: {
-        user: 'noir.invites@gmail.com',
-        pass: 'cicy ojvv ssjt innt'
-    }
-});
+// ✅ API key comes from Render Environment (NOT hardcoded)
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// ✅ FIRE AND FORGET - No await needed!
 async function sendEmail(to, subject, message, htmlMessage = null) {
     try {
-        await transporter.sendMail({
-            from: 'noir.invites@gmail.com',
+        const msg = {
             to: to,
+            from: 'noir.invites@gmail.com',
             subject: subject,
             text: message,
             html: htmlMessage || `<p>${message.replace(/\n/g, '<br>')}</p>`
-        });
+        };
+        await sgMail.send(msg);
         console.log(`📧 Email sent to: ${to}`);
         return true;
     } catch (error) {
@@ -656,16 +649,16 @@ app.get('/login', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ╔═══════════════════════════════════════════════════════════╗
-║  🚀 NOIR DATE PLANNER - PRODUCTION READY!               ║
+║  🚀 NOIR DATE PLANNER - SENDGRID ✅ (SECURE!)          ║
 ║                                                           ║
 ║  📡 Server: http://localhost:${PORT}                      ║
 ║  📊 Admin: http://localhost:${PORT}/admin               ║
 ║  👤 Customer: http://localhost:${PORT}/customer?plan=KEY ║
 ║  🔐 Login: http://localhost:${PORT}/login               ║
 ║                                                           ║
-║  📧 Email: noir.invites@gmail.com  ✅ CORRECT!          ║
-║  🔑 App Password: cicy ojvv ssjt innt  ✅ SET!          ║
-║  🔌 SMTP Port: 465 (Fixed connection timeout!)          ║
+║  📧 Email: noir.invites@gmail.com  ✅                   ║
+║  📤 SendGrid: API key from Render Environment           ║
+║  🔒 NO API KEY IN CODE!                                 ║
 ║  ⚡ Speed: Fire & Forget (NO WAITING!)                  ║
 ║  🔑 Admin Key: NOIR_ADMIN_2026                           ║
 ║  👤 Admin: admin@noir.com / admin123                     ║
