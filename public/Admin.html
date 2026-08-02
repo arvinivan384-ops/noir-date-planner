@@ -279,6 +279,58 @@
             background: rgba(255, 255, 255, 0.02);
         }
 
+        /* --- TRACKER SECTION --- */
+        .tracker-section {
+            background: rgba(0, 240, 255, 0.03);
+            border: 1px solid rgba(0, 240, 255, 0.08);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 25px;
+            backdrop-filter: blur(15px);
+        }
+
+        .tracker-section h2 {
+            color: #00f0ff;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tracker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .tracker-item {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .tracker-item .label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6a5a6a;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .tracker-item .value {
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 4px;
+        }
+
+        .tracker-item .value.pending { color: #e8829f; }
+        .tracker-item .value.done { color: #8fd0a5; }
+        .tracker-item .value.yes { color: #eecf8f; }
+
         /* --- TABLE --- */
         .table-section {
             margin-top: 15px;
@@ -345,11 +397,33 @@
             color: #00ffaa;
         }
 
+        .action-btn.danger {
+            background: rgba(255, 0, 0, 0.06);
+            border-color: rgba(255, 0, 0, 0.08);
+            color: rgba(255, 107, 107, 0.7);
+        }
+
+        .action-btn.danger:hover {
+            background: rgba(255, 0, 0, 0.12);
+            color: #ff6b6b;
+        }
+
+        .action-btn.copy-btn {
+            background: rgba(0, 240, 255, 0.06);
+            border-color: rgba(0, 240, 255, 0.08);
+            color: rgba(0, 240, 255, 0.7);
+        }
+
+        .action-btn.copy-btn:hover {
+            background: rgba(0, 240, 255, 0.12);
+            color: #00f0ff;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
-            min-width: 600px;
+            min-width: 700px;
         }
 
         th {
@@ -473,6 +547,223 @@
             color: #fff;
         }
 
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            background: #1a1122;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            color: #f2ebe6;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            animation: slideUp 0.3s ease forwards;
+            max-width: 400px;
+        }
+
+        .toast.success { border-color: #8fd0a5; }
+        .toast.error { border-color: #e8829f; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .toast.hidden { display: none; }
+
+        /* --- LOGIN OVERLAY --- */
+        .login-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(15px);
+        }
+
+        .login-overlay.show {
+            display: flex;
+        }
+
+        .login-modal {
+            background: rgba(20, 14, 27, 0.95);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(238, 207, 143, 0.15);
+            border-radius: 24px;
+            padding: 45px 40px;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: 0 25px 60px -20px #000000cc;
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        .login-modal .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-modal .login-header .icon {
+            font-size: 48px;
+            color: #eecf8f;
+            margin-bottom: 10px;
+        }
+
+        .login-modal .login-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fcf5f0 20%, #eecf8f 55%, #e8829f 85%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-modal .login-header p {
+            color: rgba(160, 156, 176, 0.7);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .login-modal .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+
+        .login-modal .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(160, 156, 176, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .login-modal .form-group .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .login-modal .form-group .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            color: rgba(160, 156, 176, 0.4);
+            font-size: 16px;
+        }
+
+        .login-modal .form-group input {
+            width: 100%;
+            padding: 12px 16px 12px 44px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .login-modal .form-group input:focus {
+            border-color: rgba(238, 207, 143, 0.3);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 30px rgba(238, 207, 143, 0.03);
+        }
+
+        .login-modal .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0 15px;
+        }
+
+        .login-modal .form-options label {
+            font-size: 13px;
+            color: rgba(160, 156, 176, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .login-modal .form-options label input[type="checkbox"] {
+            accent-color: #eecf8f;
+            width: 16px;
+            height: 16px;
+        }
+
+        .login-modal .error-message {
+            display: none;
+            background: rgba(232, 130, 159, 0.08);
+            border: 1px solid rgba(232, 130, 159, 0.15);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #e8829f;
+            font-size: 13px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .login-modal .error-message.show {
+            display: block;
+            animation: shake 0.4s ease;
+        }
+
+        .login-modal .login-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #eecf8f, #d9b25f);
+            color: #1a0f18;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(217, 178, 95, 0.3);
+            font-family: 'Playfair Display', serif;
+            letter-spacing: 0.02em;
+        }
+
+        .login-modal .login-btn:hover {
+            transform: scale(1.01);
+            box-shadow: 0 12px 35px rgba(217, 178, 95, 0.4);
+        }
+
+        .login-modal .login-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: rgba(106, 90, 106, 0.6);
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.04em;
+        }
+
+        .login-modal .login-footer .heart {
+            color: #e8829f;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
         /* --- SCROLLBAR --- */
         ::-webkit-scrollbar {
             width: 4px;
@@ -512,6 +803,10 @@
                 gap: 12px;
             }
 
+            .tracker-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
             .top-bar {
                 flex-direction: column;
                 align-items: flex-start;
@@ -526,12 +821,29 @@
             .stat-value {
                 font-size: 22px;
             }
+
+            table {
+                font-size: 11px;
+                min-width: 500px;
+            }
+            th, td {
+                padding: 8px 10px;
+            }
+
+            .login-modal {
+                padding: 30px 20px;
+                margin: 20px;
+            }
         }
 
         @media (max-width: 480px) {
             .card-grid {
                 grid-template-columns: 1fr 1fr;
                 gap: 8px;
+            }
+
+            .tracker-grid {
+                grid-template-columns: 1fr 1fr;
             }
 
             .stat-value {
@@ -564,6 +876,10 @@
             .modal {
                 padding: 20px;
             }
+
+            .login-modal {
+                padding: 25px 15px;
+            }
         }
 
         @media (min-width: 769px) {
@@ -580,12 +896,63 @@
          ========================================================= -->
     <div id="slideshow-container">
         <div class="bg-overlay"></div>
-        <div class="slide active" style="background-image: url('background1.jpg');"></div>
-        <div class="slide" style="background-image: url('background2.jpg');"></div>
-        <div class="slide" style="background-image: url('background3.jpg');"></div>
-        <div class="slide" style="background-image: url('background4.jpg');"></div>
-        <div class="slide" style="background-image: url('backgrounds.jpg');"></div>
-        <div class="slide" style="background-image: url('Pinterest.jpg');"></div>
+        <div class="slide active" style="background-image: url('/background1.jpg');"></div>
+        <div class="slide" style="background-image: url('/background2.jpg');"></div>
+        <div class="slide" style="background-image: url('/background3.jpg');"></div>
+        <div class="slide" style="background-image: url('/background4.jpg');"></div>
+        <div class="slide" style="background-image: url('/backgrounds.jpg');"></div>
+        <div class="slide" style="background-image: url('/Pinterest.jpg');"></div>
+    </div>
+
+    <!-- =========================================================
+         LOGIN OVERLAY (Shows on Admin page)
+         ========================================================= -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-modal">
+            <div class="login-header">
+                <div class="icon">✦</div>
+                <h1>NOIR</h1>
+                <p>Admin Access Required</p>
+            </div>
+
+            <form class="login-form" id="adminLoginForm" onsubmit="return handleAdminLogin(event)">
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="adminLoginEmail" placeholder="admin@noir.com" value="admin@noir.com" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="adminLoginPassword" placeholder="••••••••" value="admin123" required>
+                    </div>
+                </div>
+
+                <div class="form-options">
+                    <label>
+                        <input type="checkbox" id="adminRememberMe" checked>
+                        Remember me
+                    </label>
+                </div>
+
+                <div class="error-message" id="adminLoginError">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Invalid credentials. Please try again.
+                </div>
+
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Access Dashboard
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <span>✦</span> Secured Access <span class="heart">♥</span> NOIR Admin <span>✦</span>
+            </div>
+        </div>
     </div>
 
     <!-- =========================================================
@@ -649,6 +1016,43 @@
             <!-- SECTION: DASHBOARD -->
             <div id="section-dashboard">
 
+                <!-- =========================================================
+                     LIVE TRACKER
+                     ========================================================= -->
+                <div class="tracker-section">
+                    <h2>
+                        <span>📊 LIVE TRACKING · YOUR DATE</span>
+                        <button class="action-btn primary" onclick="refreshTracker()" style="font-size:11px; padding:4px 12px;">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </h2>
+                    <div class="tracker-grid" id="trackerGrid">
+                        <div class="tracker-item">
+                            <div class="label">📄 page viewed</div>
+                            <div class="value pending" id="trackPageViewed">⏳ loading...</div>
+                        </div>
+                        <div class="tracker-item">
+                            <div class="label">💛 said yes</div>
+                            <div class="value pending" id="trackYes">⏳ loading...</div>
+                        </div>
+                        <div class="tracker-item">
+                            <div class="label">🎯 vibe selected</div>
+                            <div class="value pending" id="trackVibe">⏳ loading...</div>
+                        </div>
+                        <div class="tracker-item">
+                            <div class="label">📍 place chosen</div>
+                            <div class="value pending" id="trackPlace">⏳ loading...</div>
+                        </div>
+                        <div class="tracker-item" style="grid-column: span 2;">
+                            <div class="label">📅 date confirmed</div>
+                            <div class="value pending" id="trackConfirm">⏳ loading...</div>
+                        </div>
+                    </div>
+                    <div style="text-align:right; margin-top:10px; font-size:10px; color:#6a5a6a; font-family:'JetBrains Mono',monospace;">
+                        <span id="trackerTimestamp">Last update: —</span>
+                    </div>
+                </div>
+
                 <!-- STATS CARDS -->
                 <div class="card-grid">
                     <div class="card stat-card" onclick="showSection('responses')">
@@ -710,7 +1114,7 @@
                                     <th>Vibe</th>
                                     <th>Place</th>
                                     <th>Confirmed</th>
-                                    <th>Actions</th>
+                                    <th style="text-align:center;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="plansBody">
@@ -837,11 +1241,74 @@
         </div>
     </div>
 
+    <!-- Toast Notification -->
+    <div class="toast hidden" id="toast"></div>
+
     <!-- =========================================================
-         JAVASCRIPT
+         JAVASCRIPT - EVERYTHING INCLUDED
          ========================================================= -->
     <script>
-        // --- SLIDESHOW ---
+        // ============================================================
+        //  CHECK LOGIN - Show Login Modal if Not Logged In
+        // ============================================================
+        if (!sessionStorage.getItem('adminLoggedIn') && !localStorage.getItem('adminLoggedIn')) {
+            document.getElementById('loginOverlay').classList.add('show');
+        }
+
+        // ============================================================
+        //  ADMIN LOGIN (Inside Dashboard)
+        // ============================================================
+        function handleAdminLogin(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('adminLoginEmail').value.trim();
+            const password = document.getElementById('adminLoginPassword').value.trim();
+            const errorEl = document.getElementById('adminLoginError');
+
+            const ADMIN_EMAIL = 'admin@noir.com';
+            const ADMIN_PASSWORD = 'admin123';
+
+            errorEl.classList.remove('show');
+
+            if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                if (document.getElementById('adminRememberMe').checked) {
+                    localStorage.setItem('adminLoggedIn', 'true');
+                }
+                document.getElementById('loginOverlay').classList.remove('show');
+                showToast('✅ Welcome back, Admin!', 'success');
+                loadData();
+                refreshTracker();
+            } else {
+                errorEl.classList.add('show');
+                showToast('❌ Invalid email or password', 'error');
+            }
+
+            return false;
+        }
+
+        // Close login overlay on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.getElementById('loginOverlay').classList.remove('show');
+            }
+        });
+
+        // ============================================================
+        //  LOGOUT - Show Login Modal Instead of Redirect
+        // ============================================================
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                sessionStorage.clear();
+                localStorage.clear();
+                showToast('👋 Logged out successfully!', 'success');
+                document.getElementById('loginOverlay').classList.add('show');
+            }
+        }
+
+        // ============================================================
+        //  SLIDESHOW
+        // ============================================================
         const slides = document.querySelectorAll('.slide');
         let currentSlideIndex = 0;
         const transitionSpeed = 4000;
@@ -853,13 +1320,14 @@
         }
         setInterval(changeSlide, transitionSpeed);
 
-        // --- SIDEBAR TOGGLE ---
+        // ============================================================
+        //  SIDEBAR TOGGLE
+        // ============================================================
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             sidebar.classList.toggle('open');
         }
 
-        // Close sidebar when clicking outside on mobile
         document.addEventListener('click', function(event) {
             const sidebar = document.getElementById('sidebar');
             const toggle = document.querySelector('.menu-toggle-btn');
@@ -870,7 +1338,23 @@
             }
         });
 
-        // --- SECTION NAVIGATION ---
+        // ============================================================
+        //  TOAST NOTIFICATION
+        // ============================================================
+        function showToast(message, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.remove('hidden');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // ============================================================
+        //  SECTION NAVIGATION
+        // ============================================================
         function showSection(section) {
             document.querySelectorAll('[id^="section-"]').forEach(el => el.style.display = 'none');
             const target = document.getElementById('section-' + section);
@@ -907,20 +1391,15 @@
             }
         }
 
-        // --- LOGOUT ---
-        function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                window.location.href = '/admin';
-            }
-        }
-
-        // --- MODAL ---
+        // ============================================================
+        //  MODAL
+        // ============================================================
         function showModal(type) {
             if (type === 'createPlan') {
                 document.getElementById('createPlanModal').classList.add('show');
                 document.getElementById('newPlanResult').style.display = 'none';
                 document.getElementById('newPlanEmail').value = '';
-                document.getElementById('newPlanRecipient').value = 'Radhia';
+                document.getElementById('newPlanRecipient').value = '';
             }
         }
 
@@ -936,10 +1415,12 @@
             });
         });
 
-        // --- CREATE NEW PLAN ---
+        // ============================================================
+        //  CREATE NEW PLAN
+        // ============================================================
         async function createNewPlan() {
             const email = document.getElementById('newPlanEmail').value.trim();
-            const recipientName = document.getElementById('newPlanRecipient').value.trim() || 'Radhia';
+            const recipientName = document.getElementById('newPlanRecipient').value.trim() || 'Your Date';
             
             if (!email) {
                 alert('Please enter a customer email.');
@@ -955,15 +1436,21 @@
                 const data = await response.json();
                 
                 if (data.success) {
+                    const baseUrl = 'https://noir-date-planner.onrender.com';
                     resultDiv.innerHTML = `
                         ✅ Plan created successfully!<br>
-                        <strong>Plan Key:</strong> ${data.planKey}<br>
-                        <strong>Link:</strong> <a href="${data.link}" target="_blank" style="color:#00f0ff;">${data.link}</a><br>
-                        <button class="action-btn success" onclick="copyToClipboard('${data.link}')" style="margin-top:8px;">
-                            <i class="fas fa-copy"></i> Copy Link
+                        <strong>Plan Key:</strong> ${data.planKey}<br><br>
+                        <strong>📤 Send to Girl:</strong><br>
+                        <span style="font-size:12px;word-break:break-all;">${baseUrl}/?plan=${data.planKey}</span><br><br>
+                        <strong>📊 Client Status:</strong><br>
+                        <span style="font-size:12px;word-break:break-all;">${baseUrl}/customer?plan=${data.planKey}</span><br><br>
+                        <button class="action-btn success" onclick="copyPlanLinks('${data.planKey}')" style="margin-top:8px;">
+                            <i class="fas fa-copy"></i> Copy All Links
                         </button>
                     `;
                     loadData();
+                    refreshTracker();
+                    showToast('✅ Plan created successfully!', 'success');
                 } else {
                     resultDiv.innerHTML = '❌ Error: ' + (data.error || 'Unknown error');
                 }
@@ -972,10 +1459,188 @@
             }
         }
 
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                alert('Link copied to clipboard!');
+        // ============================================================
+        //  COPY PLAN LINKS
+        // ============================================================
+        function copyPlanLinks(planKey) {
+            const baseUrl = 'https://noir-date-planner.onrender.com';
+            const inviteLink = `${baseUrl}/?plan=${planKey}`;
+            const customerLink = `${baseUrl}/customer?plan=${planKey}`;
+            const adminLink = `${baseUrl}/admin`;
+            
+            const message = `📤 NOIR Date Plan\n\n📤 Send this to the girl:\n${inviteLink}\n\n📊 Check her response:\n${customerLink}\n\n🔐 Admin Dashboard:\n${adminLink}`;
+            
+            navigator.clipboard.writeText(message).then(() => {
+                showToast('✅ All links copied to clipboard!', 'success');
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = message;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('✅ All links copied to clipboard!', 'success');
             });
+        }
+
+        // ============================================================
+        //  DELETE PLAN
+        // ============================================================
+        async function deletePlan(key) {
+            if (!confirm('🗑️ Delete this response?')) return;
+
+            try {
+                const response = await fetch(`/api/admin/delete-plan/${key}`, {
+                    method: 'DELETE',
+                    headers: { 'x-admin-key': ADMIN_KEY }
+                });
+
+                if (!response.ok) throw new Error('Delete failed');
+
+                showToast('✅ Deleted successfully!', 'success');
+                loadData();
+                loadResponses();
+                loadCustomers();
+                loadAnalytics();
+                refreshTracker();
+            } catch (error) {
+                console.error('Error deleting:', error);
+                showToast('❌ Failed to delete', 'error');
+            }
+        }
+
+        // ============================================================
+        //  TRACKER FUNCTIONS
+        // ============================================================
+        let trackerData = {
+            pageViewed: false,
+            yesClicked: false,
+            vibeSelected: null,
+            placeSelected: null,
+            dateConfirmed: null,
+            lastUpdate: null
+        };
+
+        function getPlanKeyFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('plan') || null;
+        }
+
+        async function refreshTracker() {
+            const planKey = getPlanKeyFromURL();
+            
+            if (!planKey) {
+                try {
+                    const response = await fetch('/api/admin/plans', {
+                        headers: { 'x-admin-key': ADMIN_KEY }
+                    });
+                    const data = await response.json();
+                    const plans = data.plans || [];
+                    
+                    if (plans.length === 0) {
+                        document.getElementById('trackPageViewed').textContent = '📭 No plans';
+                        document.getElementById('trackPageViewed').className = 'value pending';
+                        document.getElementById('trackYes').textContent = '📭 No plans';
+                        document.getElementById('trackYes').className = 'value pending';
+                        document.getElementById('trackVibe').textContent = '📭 No plans';
+                        document.getElementById('trackVibe').className = 'value pending';
+                        document.getElementById('trackPlace').textContent = '📭 No plans';
+                        document.getElementById('trackPlace').className = 'value pending';
+                        document.getElementById('trackConfirm').textContent = '📭 No plans';
+                        document.getElementById('trackConfirm').className = 'value pending';
+                        document.getElementById('trackerTimestamp').textContent = 'No plans created yet';
+                        return;
+                    }
+                    
+                    const viewed = plans.filter(p => p.page_viewed).length;
+                    const yesCount = plans.filter(p => p.yes_clicked).length;
+                    const vibes = plans.map(p => p.vibe).filter(v => v && v !== '—');
+                    const uniqueVibes = [...new Set(vibes)];
+                    const places = plans.map(p => p.place).filter(p => p && p !== '—');
+                    const uniquePlaces = [...new Set(places)];
+                    const confirmed = plans.filter(p => p.date_confirmed).length;
+                    
+                    const pageEl = document.getElementById('trackPageViewed');
+                    pageEl.textContent = viewed > 0 ? `✅ ${viewed} viewed` : '⏳ 0 viewed';
+                    pageEl.className = viewed > 0 ? 'value done' : 'value pending';
+                    
+                    const yesEl = document.getElementById('trackYes');
+                    yesEl.textContent = yesCount > 0 ? `💛 ${yesCount} YES!` : '⏳ 0 YES';
+                    yesEl.className = yesCount > 0 ? 'value yes' : 'value pending';
+                    
+                    const vibeEl = document.getElementById('trackVibe');
+                    vibeEl.textContent = uniqueVibes.length > 0 ? `🎯 ${uniqueVibes.slice(0, 3).join(', ')}${uniqueVibes.length > 3 ? '...' : ''}` : '⏳ none yet';
+                    vibeEl.className = uniqueVibes.length > 0 ? 'value done' : 'value pending';
+                    
+                    const placeEl = document.getElementById('trackPlace');
+                    placeEl.textContent = uniquePlaces.length > 0 ? `📍 ${uniquePlaces.slice(0, 3).join(', ')}${uniquePlaces.length > 3 ? '...' : ''}` : '⏳ none yet';
+                    placeEl.className = uniquePlaces.length > 0 ? 'value done' : 'value pending';
+                    
+                    const confirmEl = document.getElementById('trackConfirm');
+                    confirmEl.textContent = confirmed > 0 ? `✅ ${confirmed} confirmed` : '⏳ 0 confirmed';
+                    confirmEl.className = confirmed > 0 ? 'value done' : 'value pending';
+                    
+                    document.getElementById('trackerTimestamp').textContent = `📊 ${plans.length} plans • Updated: ${new Date().toLocaleString()}`;
+                    
+                } catch (error) {
+                    console.error('Tracker error:', error);
+                    document.getElementById('trackerTimestamp').textContent = '❌ Error loading tracker';
+                }
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/status/${planKey}`);
+                const data = await response.json();
+                
+                if (data) {
+                    trackerData.pageViewed = data.page_viewed || false;
+                    trackerData.yesClicked = data.yes_clicked || false;
+                    trackerData.vibeSelected = data.vibe_selected || null;
+                    trackerData.placeSelected = data.place_selected || null;
+                    trackerData.dateConfirmed = data.date_confirmed || null;
+                    trackerData.lastUpdate = new Date().toISOString();
+                    updateTrackerUI();
+                }
+            } catch (error) {
+                console.error('Tracker error:', error);
+                document.getElementById('trackerTimestamp').textContent = '❌ Error loading plan';
+            }
+        }
+
+        function updateTrackerUI() {
+            const pageEl = document.getElementById('trackPageViewed');
+            const yesEl = document.getElementById('trackYes');
+            const vibeEl = document.getElementById('trackVibe');
+            const placeEl = document.getElementById('trackPlace');
+            const confirmEl = document.getElementById('trackConfirm');
+            const timestampEl = document.getElementById('trackerTimestamp');
+
+            if (pageEl) {
+                pageEl.textContent = trackerData.pageViewed ? '✅ viewed' : '⏳ pending';
+                pageEl.className = trackerData.pageViewed ? 'value done' : 'value pending';
+            }
+            if (yesEl) {
+                yesEl.textContent = trackerData.yesClicked ? '💛 YES!' : '⏳ waiting';
+                yesEl.className = trackerData.yesClicked ? 'value yes' : 'value pending';
+            }
+            if (vibeEl) {
+                vibeEl.textContent = trackerData.vibeSelected ? `🎯 ${trackerData.vibeSelected}` : '⏳ waiting';
+                vibeEl.className = trackerData.vibeSelected ? 'value done' : 'value pending';
+            }
+            if (placeEl) {
+                placeEl.textContent = trackerData.placeSelected ? `📍 ${trackerData.placeSelected}` : '⏳ waiting';
+                placeEl.className = trackerData.placeSelected ? 'value done' : 'value pending';
+            }
+            if (confirmEl) {
+                confirmEl.textContent = trackerData.dateConfirmed ? `✅ ${trackerData.dateConfirmed}` : '⏳ waiting';
+                confirmEl.className = trackerData.dateConfirmed ? 'value done' : 'value pending';
+            }
+            if (timestampEl) {
+                timestampEl.textContent = trackerData.lastUpdate 
+                    ? `Last update: ${new Date(trackerData.lastUpdate).toLocaleString()}`
+                    : 'Last update: —';
+            }
         }
 
         // --- DASHBOARD DATA ---
@@ -993,6 +1658,7 @@
                 if (!response.ok) throw new Error('Failed to load data');
                 const data = await response.json();
                 renderData(data);
+                refreshTracker();
             } catch (error) {
                 console.error('Error loading data:', error);
                 tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:30px;color:rgba(232,130,159,0.6);">❌ ${error.message}</td></tr>`;
@@ -1030,9 +1696,15 @@
                         <td>${plan.vibe || '—'}</td>
                         <td style="font-size:12px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${plan.place || '—'}</td>
                         <td>${confirmedText}</td>
-                        <td>
-                            <button class="action-btn" onclick="viewPlan('${plan.plan_key}')" style="padding:4px 8px;font-size:10px;">
+                        <td style="text-align:center;white-space:nowrap;">
+                            <button class="action-btn copy-btn" onclick="copyPlanLinks('${plan.plan_key}')" style="padding:4px 8px;font-size:10px;" title="Copy Links">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button class="action-btn" onclick="viewPlan('${plan.plan_key}')" style="padding:4px 8px;font-size:10px;" title="View Details">
                                 <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-btn danger" onclick="deletePlan('${plan.plan_key}')" style="padding:4px 8px;font-size:10px;" title="Delete">
+                                <i class="fas fa-trash"></i>
                             </button>
                         </td>
                     </tr>
@@ -1050,6 +1722,7 @@
             try {
                 const response = await fetch(`/api/status/${planKey}`);
                 const data = await response.json();
+                const baseUrl = 'https://noir-date-planner.onrender.com';
                 content.innerHTML = `
                     <p><strong>Recipient:</strong> ${data.recipient_name || 'Radhia'}</p>
                     <p><strong>Page Viewed:</strong> ${data.page_viewed ? '✅ Yes' : '⏳ No'}</p>
@@ -1058,6 +1731,14 @@
                     <p><strong>Place:</strong> ${data.place_selected || '—'}</p>
                     <p><strong>Date Confirmed:</strong> ${data.date_confirmed || '—'}</p>
                     <p><strong>Updated:</strong> ${data.updated_at ? new Date(data.updated_at).toLocaleString() : '—'}</p>
+                    <hr style="border-color:rgba(255,255,255,0.1);margin:15px 0;">
+                    <p><strong>📤 Send to Girl:</strong><br>
+                    <span style="font-size:12px;word-break:break-all;color:#00f0ff;">${baseUrl}/?plan=${planKey}</span></p>
+                    <p><strong>📊 Client Status:</strong><br>
+                    <span style="font-size:12px;word-break:break-all;color:#00f0ff;">${baseUrl}/customer?plan=${planKey}</span></p>
+                    <button class="action-btn success" onclick="copyPlanLinks('${planKey}')" style="margin-top:10px;">
+                        <i class="fas fa-copy"></i> Copy All Links
+                    </button>
                 `;
             } catch (error) {
                 content.innerHTML = '<p style="color:rgba(232,130,159,0.6);">Error loading plan details.</p>';
@@ -1212,22 +1893,27 @@
         async function resetAll() {
             try {
                 await fetch('/api/reset/default', { method: 'POST' });
-                alert('✅ All data has been reset!');
+                showToast('✅ All data has been reset!', 'success');
                 loadData();
                 loadResponses();
                 loadCustomers();
                 loadAnalytics();
             } catch (error) {
-                alert('❌ Error resetting data: ' + error.message);
+                showToast('❌ Error resetting data: ' + error.message, 'error');
             }
         }
 
-        // --- INITIALIZE ---
+        // ============================================================
+        //  INITIALIZE
+        // ============================================================
         showSection('dashboard');
         loadData();
 
         // Auto-refresh every 15 seconds
-        setInterval(loadData, 15000);
+        setInterval(() => {
+            loadData();
+            refreshTracker();
+        }, 15000);
     </script>
 </body>
 </html>

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - NOIR</title>
+
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- RESET & BASIC SETUP --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            color: #ffffff;
+            overflow: hidden;
+            background-color: #0b0712;
+        }
+
+        /* --- BACKGROUND SLIDESHOW --- */
+        #slideshow-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1.8s ease-in-out;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .slide.active {
+            opacity: 0.45;
+            filter: brightness(0.8);
+        }
+
+        .bg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(15, 8, 25, 0.80), rgba(20, 5, 20, 0.70));
+            z-index: 2;
+        }
+
+        /* --- LOGIN CONTAINER --- */
+        .login-container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: rgba(20, 14, 27, 0.85);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(238, 207, 143, 0.15);
+            border-radius: 24px;
+            padding: 45px 40px;
+            max-width: 440px;
+            width: 100%;
+            box-shadow: 0 25px 60px -20px #000000cc;
+            animation: fadeIn 0.8s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-header .icon {
+            font-size: 48px;
+            color: #eecf8f;
+            margin-bottom: 10px;
+        }
+
+        .login-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fcf5f0 20%, #eecf8f 55%, #e8829f 85%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-header p {
+            color: rgba(160, 156, 176, 0.7);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(160, 156, 176, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .form-group .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-group .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            color: rgba(160, 156, 176, 0.4);
+            font-size: 16px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px 12px 44px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .form-group input:focus {
+            border-color: rgba(238, 207, 143, 0.3);
+            background: rgba(255, 255, 255, 0.06);
+            box-shadow: 0 0 30px rgba(238, 207, 143, 0.03);
+        }
+
+        .form-group input::placeholder {
+            color: rgba(160, 156, 176, 0.3);
+        }
+
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 5px;
+        }
+
+        .form-options label {
+            font-size: 13px;
+            color: rgba(160, 156, 176, 0.6);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .form-options label input[type="checkbox"] {
+            accent-color: #eecf8f;
+            width: 16px;
+            height: 16px;
+        }
+
+        .form-options a {
+            font-size: 13px;
+            color: rgba(160, 156, 176, 0.4);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .form-options a:hover {
+            color: #eecf8f;
+        }
+
+        .login-btn {
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #eecf8f, #d9b25f);
+            color: #1a0f18;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(217, 178, 95, 0.3);
+            font-family: 'Playfair Display', serif;
+            letter-spacing: 0.02em;
+            margin-top: 5px;
+        }
+
+        .login-btn:hover {
+            transform: scale(1.01);
+            box-shadow: 0 12px 35px rgba(217, 178, 95, 0.4);
+        }
+
+        .login-btn:active {
+            transform: scale(0.98);
+        }
+
+        .login-btn i {
+            margin-right: 8px;
+        }
+
+        .error-message {
+            display: none;
+            background: rgba(232, 130, 159, 0.08);
+            border: 1px solid rgba(232, 130, 159, 0.15);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #e8829f;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .login-footer {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 12px;
+            color: rgba(106, 90, 106, 0.6);
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 0.04em;
+        }
+
+        .login-footer .heart {
+            color: #e8829f;
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 480px) {
+            .login-box {
+                padding: 30px 20px;
+            }
+
+            .login-header h1 {
+                font-size: 26px;
+            }
+
+            .login-header .icon {
+                font-size: 36px;
+            }
+
+            .form-group input {
+                font-size: 14px;
+                padding: 10px 14px 10px 40px;
+            }
+
+            .login-btn {
+                font-size: 15px;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- =========================================================
+         BACKGROUND SLIDESHOW
+         ========================================================= -->
+    <div id="slideshow-container">
+        <div class="bg-overlay"></div>
+        <div class="slide active" style="background-image: url('/background1.jpg');"></div>
+        <div class="slide" style="background-image: url('/background2.jpg');"></div>
+        <div class="slide" style="background-image: url('/background3.jpg');"></div>
+        <div class="slide" style="background-image: url('/background4.jpg');"></div>
+        <div class="slide" style="background-image: url('/backgrounds.jpg');"></div>
+        <div class="slide" style="background-image: url('/Pinterest.jpg');"></div>
+    </div>
+
+    <!-- =========================================================
+         LOGIN UI
+         ========================================================= -->
+    <div class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <div class="icon">✦</div>
+                <h1>NOIR</h1>
+                <p>Admin Access · Back Office</p>
+            </div>
+
+            <form class="login-form" id="loginForm" onsubmit="return handleLogin(event)">
+                <div class="form-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="loginEmail" placeholder="admin@noir.com" value="admin@noir.com" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><i class="fas fa-lock"></i> Password</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="loginPassword" placeholder="••••••••" value="admin123" required>
+                    </div>
+                </div>
+
+                <div class="form-options">
+                    <label>
+                        <input type="checkbox" id="rememberMe" checked>
+                        Remember me
+                    </label>
+                    <a href="#">Forgot password?</a>
+                </div>
+
+                <div class="error-message" id="errorMessage">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Invalid credentials. Please try again.
+                </div>
+
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Login to Dashboard
+                </button>
+            </form>
+
+            <div class="login-footer">
+                <span>✦</span> Secured Access <span class="heart">♥</span> NOIR Admin <span>✦</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         JAVASCRIPT
+         ========================================================= -->
+    <script>
+        // --- SLIDESHOW ---
+        const slides = document.querySelectorAll('.slide');
+        let currentSlideIndex = 0;
+        const transitionSpeed = 4000;
+
+        function changeSlide() {
+            slides[currentSlideIndex].classList.remove('active');
+            currentSlideIndex = (currentSlideIndex + 1) % slides.length;
+            slides[currentSlideIndex].classList.add('active');
+        }
+        setInterval(changeSlide, transitionSpeed);
+
+        // --- LOGIN HANDLER ---
+        function handleLogin(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const errorEl = document.getElementById('errorMessage');
+
+            // Admin credentials
+            const ADMIN_EMAIL = 'admin@noir.com';
+            const ADMIN_PASSWORD = 'admin123';
+
+            // Reset error
+            errorEl.classList.remove('show');
+
+            // Check credentials
+            if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+                // Set session
+                sessionStorage.setItem('adminLoggedIn', 'true');
+                
+                // Remember me
+                if (document.getElementById('rememberMe').checked) {
+                    localStorage.setItem('adminLoggedIn', 'true');
+                }
+
+                // Show success and redirect
+                showToast('✅ Login successful! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = '/admin';
+                }, 500);
+            } else {
+                // Show error
+                errorEl.classList.add('show');
+                showToast('❌ Invalid email or password', 'error');
+                
+                // Shake the form
+                document.querySelector('.login-box').style.animation = 'shake 0.4s ease';
+                setTimeout(() => {
+                    document.querySelector('.login-box').style.animation = 'fadeIn 0.8s ease forwards';
+                }, 500);
+            }
+
+            return false;
+        }
+
+        // --- TOAST NOTIFICATION ---
+        function showToast(message, type = '') {
+            // Create toast element if it doesn't exist
+            let toast = document.getElementById('toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'toast';
+                toast.style.cssText = `
+                    position: fixed;
+                    bottom: 30px;
+                    right: 30px;
+                    padding: 16px 24px;
+                    border-radius: 12px;
+                    background: #1a1122;
+                    border: 1px solid rgba(255,255,255,0.1);
+                    color: #f2ebe6;
+                    font-family: 'JetBrains Mono', monospace;
+                    font-size: 13px;
+                    backdrop-filter: blur(8px);
+                    z-index: 1000;
+                    animation: slideUp 0.3s ease forwards;
+                    max-width: 400px;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+                `;
+                document.body.appendChild(toast);
+            }
+
+            toast.textContent = message;
+            toast.className = '';
+            toast.style.borderColor = type === 'success' ? '#8fd0a5' : type === 'error' ? '#e8829f' : 'rgba(255,255,255,0.1)';
+            toast.style.display = 'block';
+
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // --- KEYBOARD SHORTCUT ---
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const activeElement = document.activeElement;
+                if (activeElement && (activeElement.id === 'loginEmail' || activeElement.id === 'loginPassword')) {
+                    handleLogin(e);
+                }
+            }
+        });
+
+        // --- CHECK IF ALREADY LOGGED IN ---
+        (function checkSession() {
+            if (sessionStorage.getItem('adminLoggedIn') === 'true' || 
+                localStorage.getItem('adminLoggedIn') === 'true') {
+                window.location.href = '/admin';
+            }
+        })();
+
+        console.log('🔐 NOIR Admin Login Page');
+        console.log('📧 Email: admin@noir.com');
+        console.log('🔑 Password: admin123');
+    </script>
+</body>
+</html>
