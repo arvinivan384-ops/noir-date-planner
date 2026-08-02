@@ -3,7 +3,7 @@ const cors = require('cors');
 const { Pool } = require('pg');
 const path = require('path');
 const crypto = require('crypto');
-const sgMail = require('@sendgrid/mail');  // ← FIXED: @sendgrid
+const sgMail = require('@sendgrid/mail');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,10 +13,22 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // ============================================================
+//  SENDGRID SETUP & SANITIZATION
+// ============================================================
+const sendgridKey = (process.env.SENDGRID_API_KEY || '').trim();
+
+if (!sendgridKey) {
+    console.error('⚠️ WARNING: SENDGRID_API_KEY is not set in environment variables!');
+} else {
+    sgMail.setApiKey(sendgridKey);
+    console.log(`🔑 SendGrid API Key initialized (Prefix: ${sendgridKey.substring(0, 5)}...)`);
+}
+
+// ============================================================
 //  DATABASE CONNECTION
 // ============================================================
 const pool = new Pool({
-    connectionString: 'postgresql://date_planner_db_m5jx_user:6NlxfInsdNcYYdT90TkV445yWqEKl9fz@dpg-d9ml5rtaeets73a820og-a/date_planner_db_m5jx',
+    connectionString: process.env.DATABASE_URL || 'postgresql://date_planner_db_m5jx_user:6NlxfInsdNcYYdT90TkV445yWqEKl9fz@dpg-d9ml5rtaeets73a820og-a/date_planner_db_m5jx',
     ssl: { rejectUnauthorized: false }
 });
 
@@ -30,10 +42,11 @@ pool.connect((err) => {
 });
 
 // ============================================================
-//  CREATE TABLES
+//  CREATE TABLES & INITIAL DATA
 // ============================================================
 async function createTables() {
     try {
+        // 1. Create Users Table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id SERIAL PRIMARY KEY,
@@ -44,6 +57,7 @@ async function createTables() {
             )
         `);
 
+        // 2. Create Date Plans Table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS date_plans (
                 id SERIAL PRIMARY KEY,
@@ -64,17 +78,7 @@ async function createTables() {
             )
         `);
 
-        // Add indexes for speed
-        await pool.query(`
-            CREATE INDEX IF NOT EXISTS idx_date_plans_plan_key ON date_plans(plan_key)
-        `);
-        await pool.query(`
-            CREATE INDEX IF NOT EXISTS idx_date_plans_user_id ON date_plans(user_id)
-        `);
-        await pool.query(`
-            CREATE INDEX IF NOT EXISTS idx_tracking_log_plan_key ON tracking_log(plan_key)
-        `);
-
+        // 3. Create Tracking Log Table FIRST
         await pool.query(`
             CREATE TABLE IF NOT EXISTS tracking_log (
                 id SERIAL PRIMARY KEY,
@@ -88,6 +92,12 @@ async function createTables() {
             )
         `);
 
+        // 4. Create Indexes AFTER Tables Exist
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_date_plans_plan_key ON date_plans(plan_key)`);
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_date_plans_user_id ON date_plans(user_id)`);
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_tracking_log_plan_key ON tracking_log(plan_key)`);
+
+        // 5. Create Quotes Table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS love_quotes (
                 id SERIAL PRIMARY KEY,
@@ -97,7 +107,7 @@ async function createTables() {
             )
         `);
 
-        // Add quotes
+        // Populate Default Quotes if Empty
         const quoteCheck = await pool.query('SELECT COUNT(*) FROM love_quotes');
         if (parseInt(quoteCheck.rows[0].count) === 0) {
             const quotes = [
@@ -141,7 +151,7 @@ async function createTables() {
                 ['You\'re the cheese to my macaroni.', 'Unknown'],
                 ['You\'re my favorite person to annoy.', 'Unknown'],
                 ['I love you more than my phone.', 'Unknown'],
-                ['How do I love thee? Let me count the ways.', 'Elizabeth Barrett Browning'],
+                ['How do I love thee? Let move count the ways.', 'Elizabeth Barrett Browning'],
                 ['I carry your heart with me (I carry it in my heart).', 'E.E. Cummings'],
                 ['She walks in beauty, like the night.', 'Lord Byron'],
                 ['Love is not love which alters when it alteration finds.', 'William Shakespeare'],
@@ -196,36 +206,37 @@ async function createTables() {
             for (const [quote, author] of quotes) {
                 await pool.query('INSERT INTO love_quotes (quote, author) VALUES ($1, $2)', [quote, author]);
             }
-            console.log('✅ 100+ love quotes added');
+            console.log('✅ Default love quotes initialized');
         }
 
-        // Admin user
+        // Initialize Admin User
         const adminCheck = await pool.query('SELECT * FROM users WHERE email = $1', ['admin@noir.com']);
         if (adminCheck.rows.length === 0) {
             await pool.query(`
                 INSERT INTO users (email, password, role) 
                 VALUES ($1, $2, 'admin')
             `, ['admin@noir.com', crypto.createHash('sha256').update('admin123').digest('hex')]);
-            console.log('✅ Admin created');
+            console.log('✅ Admin account initialized');
         }
-        console.log('✅ All tables ready');
+        console.log('✅ All database tables verified & ready');
     } catch (err) {
-        console.error('❌ Table error:', err);
+        console.error('❌ Table creation error:', err);
     }
 }
 
 // ============================================================
-//  EMAIL NOTIFICATIONS - SENDGRID (FIXED!)
+//  EMAIL HELPER (SENDGRID)
 // ============================================================
-
-// ✅ API key comes from Render Environment (NOT hardcoded)
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
 async function sendEmail(to, subject, message, htmlMessage = null) {
+    if (!sendgridKey) {
+        console.warn('⚠️ Email omitted: SENDGRID_API_KEY is not configured');
+        return false;
+    }
+
     try {
         const msg = {
             to: to,
-            from: 'noir.invites@gmail.com',
+            from: 'noir.invites@gmail.com', // Must be a verified Sender Identity in SendGrid!
             subject: subject,
             text: message,
             html: htmlMessage || `<p>${message.replace(/\n/g, '<br>')}</p>`
@@ -234,7 +245,11 @@ async function sendEmail(to, subject, message, htmlMessage = null) {
         console.log(`📧 Email sent to: ${to}`);
         return true;
     } catch (error) {
-        console.error('❌ Email error:', error.message);
+        if (error.response) {
+            console.error('❌ SendGrid API Error Details:', JSON.stringify(error.response.body));
+        } else {
+            console.error('❌ Email error:', error.message);
+        }
         return false;
     }
 }
@@ -249,121 +264,92 @@ async function getClientEmail(planKey) {
 }
 
 // ============================================================
-//  API: LOVE QUOTES
+//  API ROUTES
 // ============================================================
+
+// Get Random Quote
 app.get('/api/quote/random', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM love_quotes ORDER BY RANDOM() LIMIT 1');
         res.json({
-            quote: result.rows[0].quote,
-            author: result.rows[0].author || 'Unknown'
+            quote: result.rows[0]?.quote || 'Love conquers all.',
+            author: result.rows[0]?.author || 'Unknown'
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// ============================================================
-//  API: CREATE PLAN - SPEED OPTIMIZED!
-// ============================================================
+// Helper for Plan Creation Logic
+async function processPlanCreation(email, recipientName, req) {
+    const planKey = crypto.randomBytes(8).toString('hex');
+    let user = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+    let userId;
+
+    if (user.rows.length > 0) {
+        userId = user.rows[0].id;
+    } else {
+        const password = crypto.randomBytes(8).toString('hex');
+        const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+        const newUser = await pool.query(
+            'INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING id',
+            [email, hashedPassword, 'user']
+        );
+        userId = newUser.rows[0].id;
+    }
+
+    await pool.query(
+        'INSERT INTO date_plans (plan_key, user_id, recipient_name) VALUES ($1, $2, $3)',
+        [planKey, userId, recipientName]
+    );
+
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const inviteLink = `${baseUrl}/?plan=${planKey}`;
+    const customerLink = `${baseUrl}/customer?plan=${planKey}`;
+
+    sendEmail(
+        email,
+        `💛 Your Date Plan for ${recipientName} is Ready!`,
+        `Hi there,\n\nYour date invitation for ${recipientName} is ready! 🎉\n\n🔗 Send this link to ${recipientName}:\n${inviteLink}\n\n📊 Track her response here:\n${customerLink}\n\nShe'll open it, type her name, and tell you YES! 💛\n\nGood luck!\n- Noir Team`
+    );
+
+    return {
+        success: true,
+        planKey: planKey,
+        link: inviteLink,
+        customerLink: customerLink,
+        emailSent: true,
+        emailTo: email
+    };
+}
+
+// Create Plan (GET)
 app.get('/api/create-plan', async (req, res) => {
     const { email, recipientName = 'Your Date' } = req.query;
     if (!email) return res.status(400).json({ error: 'Email is required' });
-    const planKey = crypto.randomBytes(8).toString('hex');
     try {
-        let user = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
-        let userId;
-        if (user.rows.length > 0) {
-            userId = user.rows[0].id;
-        } else {
-            const password = crypto.randomBytes(8).toString('hex');
-            const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
-            const newUser = await pool.query(
-                'INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING id',
-                [email, hashedPassword, 'user']
-            );
-            userId = newUser.rows[0].id;
-        }
-        await pool.query(
-            'INSERT INTO date_plans (plan_key, user_id, recipient_name) VALUES ($1, $2, $3)',
-            [planKey, userId, recipientName]
-        );
-
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
-        const inviteLink = `${baseUrl}/?plan=${planKey}`;
-        const customerLink = `${baseUrl}/customer?plan=${planKey}`;
-
-        // ✅ FIRE AND FORGET - Send email in background (NO AWAIT)
-        sendEmail(
-            email,
-            `💛 Your Date Plan for ${recipientName} is Ready!`,
-            `Hi there,\n\nYour date invitation for ${recipientName} is ready! 🎉\n\n🔗 Send this link to ${recipientName}:\n${inviteLink}\n\n📊 Track her response here:\n${customerLink}\n\nShe'll open it, type her name, and tell you YES! 💛\n\nGood luck!\n- Noir Team`
-        );
-
-        res.json({
-            success: true,
-            planKey: planKey,
-            link: inviteLink,
-            customerLink: customerLink,
-            emailSent: true,
-            emailTo: email
-        });
+        const data = await processPlanCreation(email, recipientName, req);
+        res.json(data);
     } catch (err) {
         console.error('❌ Create plan error:', err);
         res.status(500).json({ error: err.message });
     }
 });
 
+// Create Plan (POST)
 app.post('/api/create-plan', async (req, res) => {
     const { email, recipientName = 'Your Date' } = req.body;
     if (!email) return res.status(400).json({ error: 'Email is required' });
-    const planKey = crypto.randomBytes(8).toString('hex');
     try {
-        let user = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
-        let userId;
-        if (user.rows.length > 0) {
-            userId = user.rows[0].id;
-        } else {
-            const password = crypto.randomBytes(8).toString('hex');
-            const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
-            const newUser = await pool.query(
-                'INSERT INTO users (email, password, role) VALUES ($1, $2, $3) RETURNING id',
-                [email, hashedPassword, 'user']
-            );
-            userId = newUser.rows[0].id;
-        }
-        await pool.query(
-            'INSERT INTO date_plans (plan_key, user_id, recipient_name) VALUES ($1, $2, $3)',
-            [planKey, userId, recipientName]
-        );
-
-        const baseUrl = `${req.protocol}://${req.get('host')}`;
-        const inviteLink = `${baseUrl}/?plan=${planKey}`;
-        const customerLink = `${baseUrl}/customer?plan=${planKey}`;
-
-        sendEmail(
-            email,
-            `💛 Your Date Plan for ${recipientName} is Ready!`,
-            `Hi there,\n\nYour date invitation for ${recipientName} is ready! 🎉\n\n🔗 Send this link to ${recipientName}:\n${inviteLink}\n\n📊 Track her response here:\n${customerLink}\n\nShe'll open it, type her name, and tell you YES! 💛\n\nGood luck!\n- Noir Team`
-        );
-
-        res.json({
-            success: true,
-            planKey: planKey,
-            link: inviteLink,
-            customerLink: customerLink,
-            emailSent: true,
-            emailTo: email
-        });
+        const data = await processPlanCreation(email, recipientName, req);
+        res.json(data);
     } catch (err) {
         console.error('❌ Create plan error:', err);
         res.status(500).json({ error: err.message });
     }
 });
 
-// ============================================================
-//  API: GET STATUS
-// ============================================================
+// Get Plan Status
 app.get('/api/status/:planKey', async (req, res) => {
     const planKey = req.params.planKey;
     try {
@@ -393,9 +379,139 @@ app.get('/api/status/:planKey', async (req, res) => {
     }
 });
 
-// ============================================================
-//  API: ADMIN - ALL PLANS (MASTER TRACKER)
-// ============================================================
+// Track User Interaction
+app.post('/api/track/:planKey', async (req, res) => {
+    const planKey = req.params.planKey;
+    const { step, data } = req.body;
+    const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const viewerName = data?.viewerName || null;
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    const userAgent = req.headers['user-agent'] || 'unknown';
+
+    try {
+        await pool.query(
+            'INSERT INTO tracking_log (plan_key, step, data, viewer_name, ip, user_agent) VALUES ($1, $2, $3, $4, $5, $6)',
+            [planKey, step, JSON.stringify(data), viewerName, ip, userAgent]
+        );
+
+        let updateQuery = '', updateParams = [];
+        switch (step) {
+            case 'page_viewed':
+                updateQuery = `UPDATE date_plans SET page_viewed = TRUE, viewed_at = $1, updated_at = $2 WHERE plan_key = $3`;
+                updateParams = [timestamp, timestamp, planKey];
+                break;
+
+            case 'name_entered':
+                updateQuery = `
+                    UPDATE date_plans 
+                    SET viewer_name = $1, recipient_name = $1, updated_at = $2 
+                    WHERE plan_key = $3
+                `;
+                updateParams = [viewerName, timestamp, planKey];
+                
+                sendEmail(
+                    'admin@noir.com',
+                    `📝 ${viewerName} entered their name`,
+                    `Plan: ${planKey}\nName: ${viewerName}\nIP: ${ip}`
+                );
+                break;
+
+            case 'yes_clicked':
+                updateQuery = `
+                    UPDATE date_plans 
+                    SET yes_clicked = TRUE, yes_clicked_at = $1, updated_at = $2,
+                        viewer_name = COALESCE(viewer_name, $3),
+                        recipient_name = COALESCE(recipient_name, $3)
+                    WHERE plan_key = $4
+                `;
+                updateParams = [timestamp, timestamp, viewerName, planKey];
+                
+                const clientEmailYes = await getClientEmail(planKey);
+                const planResultYes = await pool.query('SELECT recipient_name FROM date_plans WHERE plan_key = $1', [planKey]);
+                const recipientNameYes = planResultYes.rows[0]?.recipient_name || 'Your Date';
+                const statusLinkYes = `${req.protocol}://${req.get('host')}/customer?plan=${planKey}`;
+                
+                sendEmail(
+                    'admin@noir.com',
+                    `💛 ${recipientNameYes} said YES!`,
+                    `💛 She said YES!\n\nPlan: ${planKey}\nRecipient: ${recipientNameYes}\nTime: ${new Date().toISOString()}\nIP: ${ip}`
+                );
+                
+                if (clientEmailYes) {
+                    sendEmail(
+                        clientEmailYes,
+                        `💛 ${recipientNameYes} said YES! 🎉`,
+                        `💛 ${recipientNameYes} said YES! 🎉\n\nShe's planning the date now!\n\n📊 Track live: ${statusLinkYes}\n\n- Noir Team`
+                    );
+                }
+                break;
+
+            case 'vibe_selected':
+                updateQuery = `UPDATE date_plans SET vibe_selected = $1, updated_at = $2 WHERE plan_key = $3`;
+                updateParams = [data?.vibe || data?.label, timestamp, planKey];
+                
+                sendEmail(
+                    'admin@noir.com',
+                    `🎯 Vibe Selected: ${data?.vibe || data?.label}`,
+                    `Plan: ${planKey}\nVibe: ${data?.vibe || data?.label}\nTime: ${new Date().toISOString()}`
+                );
+                break;
+
+            case 'place_selected':
+                updateQuery = `UPDATE date_plans SET place_selected = $1, updated_at = $2 WHERE plan_key = $3`;
+                updateParams = [data?.place, timestamp, planKey];
+                
+                sendEmail(
+                    'admin@noir.com',
+                    `📍 Place Chosen: ${data?.place}`,
+                    `Plan: ${planKey}\nPlace: ${data?.place}\nTime: ${new Date().toISOString()}`
+                );
+                break;
+
+            case 'date_confirmed':
+                updateQuery = `UPDATE date_plans SET date_confirmed = $1, confirmed_at = $2, updated_at = $3 WHERE plan_key = $4`;
+                updateParams = [data?.details, timestamp, timestamp, planKey];
+                
+                const clientEmailConfirm = await getClientEmail(planKey);
+                const planResultConfirm = await pool.query('SELECT recipient_name FROM date_plans WHERE plan_key = $1', [planKey]);
+                const recipientNameConfirm = planResultConfirm.rows[0]?.recipient_name || 'Your Date';
+                const statusLink = `${req.protocol}://${req.get('host')}/customer?plan=${planKey}`;
+                
+                sendEmail(
+                    'admin@noir.com',
+                    `📅 ${recipientNameConfirm} Confirmed the Date!`,
+                    `📅 Date Confirmed!\n\nPlan: ${planKey}\nRecipient: ${recipientNameConfirm}\nDetails: ${data?.details}\nTime: ${new Date().toISOString()}`
+                );
+                
+                if (clientEmailConfirm) {
+                    sendEmail(
+                        clientEmailConfirm,
+                        `💛 ${recipientNameConfirm} said YES! 🎉 - View Her Response`,
+                        `Hi there,\n\n${recipientNameConfirm} said YES! 🎉\n\n📊 View her full response here:\n${statusLink}\n\nDetails:\n${data?.details ? data.details.replace(/ · /g, '\n') : 'N/A'}\n\n💛 Congratulations!\n\n- Noir Team`,
+                        `<h2>💛 ${recipientNameConfirm} said YES! 🎉</h2>
+                         <p><strong>📊 View her full response:</strong><br>
+                         <a href="${statusLink}" style="color:#00f0ff;">${statusLink}</a></p>
+                         <p><strong>Details:</strong><br>
+                         ${data?.details ? data.details.replace(/ · /g, '<br>') : 'N/A'}</p>
+                         <p>💛 Congratulations!</p>
+                         <p>- Noir Team</p>`
+                    );
+                }
+                break;
+
+            default:
+                return res.json({ success: true });
+        }
+        
+        await pool.query(updateQuery, updateParams);
+        res.json({ success: true, step, timestamp });
+    } catch (err) {
+        console.error('❌ Tracking error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin Route: Get Plans
 app.get('/api/admin/plans', async (req, res) => {
     const adminKey = req.headers['x-admin-key'];
     if (adminKey !== 'NOIR_ADMIN_2026') return res.status(401).json({ error: 'Unauthorized' });
@@ -427,170 +543,22 @@ app.get('/api/admin/plans', async (req, res) => {
     }
 });
 
-// ============================================================
-//  API: ADMIN - DELETE PLAN
-// ============================================================
+// Admin Route: Delete Plan
 app.delete('/api/admin/delete-plan/:planKey', async (req, res) => {
     const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== 'NOIR_ADMIN_2026') {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
+    if (adminKey !== 'NOIR_ADMIN_2026') return res.status(401).json({ error: 'Unauthorized' });
     const planKey = req.params.planKey;
     try {
         await pool.query('DELETE FROM tracking_log WHERE plan_key = $1', [planKey]);
         const result = await pool.query('DELETE FROM date_plans WHERE plan_key = $1 RETURNING *', [planKey]);
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Plan not found' });
-        }
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Plan not found' });
         res.json({ success: true, message: `Deleted plan: ${planKey}` });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// ============================================================
-//  API: TRACKING (WITH EMAIL NOTIFICATIONS)
-// ============================================================
-app.post('/api/track/:planKey', async (req, res) => {
-    const planKey = req.params.planKey;
-    const { step, data } = req.body;
-    const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    const viewerName = data.viewerName || null;
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-    const userAgent = req.headers['user-agent'] || 'unknown';
-
-    try {
-        await pool.query(
-            'INSERT INTO tracking_log (plan_key, step, data, viewer_name, ip, user_agent) VALUES ($1, $2, $3, $4, $5, $6)',
-            [planKey, step, JSON.stringify(data), viewerName, ip, userAgent]
-        );
-
-        let updateQuery = '', updateParams = [];
-        switch (step) {
-            case 'page_viewed':
-                updateQuery = `UPDATE date_plans SET page_viewed = TRUE, viewed_at = $1, updated_at = $2 WHERE plan_key = $3`;
-                updateParams = [timestamp, timestamp, planKey];
-                break;
-
-            case 'name_entered':
-                updateQuery = `
-                    UPDATE date_plans 
-                    SET viewer_name = $1, recipient_name = $1, updated_at = $2 
-                    WHERE plan_key = $3
-                `;
-                updateParams = [viewerName, timestamp, planKey];
-                console.log(`📝 Name entered: "${viewerName}"`);
-                
-                sendEmail(
-                    'admin@noir.com',
-                    `📝 ${viewerName} entered their name`,
-                    `Plan: ${planKey}\nName: ${viewerName}\nIP: ${ip}`
-                );
-                break;
-
-            case 'yes_clicked':
-                updateQuery = `
-                    UPDATE date_plans 
-                    SET yes_clicked = TRUE, yes_clicked_at = $1, updated_at = $2,
-                        viewer_name = COALESCE(viewer_name, $3),
-                        recipient_name = COALESCE(recipient_name, $3)
-                    WHERE plan_key = $4
-                `;
-                updateParams = [timestamp, timestamp, viewerName, planKey];
-                
-                const clientEmailYes = await getClientEmail(planKey);
-                const planResultYes = await pool.query('SELECT recipient_name FROM date_plans WHERE plan_key = $1', [planKey]);
-                const recipientNameYes = planResultYes.rows[0]?.recipient_name || 'Your Date';
-                const statusLinkYes = `https://noir-date-planner.onrender.com/customer?plan=${planKey}`;
-                
-                sendEmail(
-                    'admin@noir.com',
-                    `💛 ${recipientNameYes} said YES!`,
-                    `💛 She said YES!\n\nPlan: ${planKey}\nRecipient: ${recipientNameYes}\nTime: ${new Date().toISOString()}\nIP: ${ip}`
-                );
-                
-                if (clientEmailYes) {
-                    sendEmail(
-                        clientEmailYes,
-                        `💛 ${recipientNameYes} said YES! 🎉`,
-                        `💛 ${recipientNameYes} said YES! 🎉\n\nShe's planning the date now!\n\n📊 Track live: ${statusLinkYes}\n\n- Noir Team`
-                    );
-                }
-                break;
-
-            case 'vibe_selected':
-                updateQuery = `UPDATE date_plans SET vibe_selected = $1, updated_at = $2 WHERE plan_key = $3`;
-                updateParams = [data.vibe || data.label, timestamp, planKey];
-                
-                sendEmail(
-                    'admin@noir.com',
-                    `🎯 Vibe Selected: ${data.vibe || data.label}`,
-                    `Plan: ${planKey}\nVibe: ${data.vibe || data.label}\nTime: ${new Date().toISOString()}`
-                );
-                break;
-
-            case 'place_selected':
-                updateQuery = `UPDATE date_plans SET place_selected = $1, updated_at = $2 WHERE plan_key = $3`;
-                updateParams = [data.place, timestamp, planKey];
-                
-                sendEmail(
-                    'admin@noir.com',
-                    `📍 Place Chosen: ${data.place}`,
-                    `Plan: ${planKey}\nPlace: ${data.place}\nTime: ${new Date().toISOString()}`
-                );
-                break;
-
-            case 'date_confirmed':
-                updateQuery = `UPDATE date_plans SET date_confirmed = $1, confirmed_at = $2, updated_at = $3 WHERE plan_key = $4`;
-                updateParams = [data.details, timestamp, timestamp, planKey];
-                
-                const clientEmailConfirm = await getClientEmail(planKey);
-                const planResultConfirm = await pool.query('SELECT recipient_name FROM date_plans WHERE plan_key = $1', [planKey]);
-                const recipientNameConfirm = planResultConfirm.rows[0]?.recipient_name || 'Your Date';
-                const statusLink = `https://noir-date-planner.onrender.com/customer?plan=${planKey}`;
-                
-                sendEmail(
-                    'admin@noir.com',
-                    `📅 ${recipientNameConfirm} Confirmed the Date!`,
-                    `📅 Date Confirmed!\n\nPlan: ${planKey}\nRecipient: ${recipientNameConfirm}\nDetails: ${data.details}\nTime: ${new Date().toISOString()}`
-                );
-                
-                if (clientEmailConfirm) {
-                    sendEmail(
-                        clientEmailConfirm,
-                        `💛 ${recipientNameConfirm} said YES! 🎉 - View Her Response`,
-                        `Hi there,\n\n${recipientNameConfirm} said YES! 🎉\n\n📊 View her full response here:\n${statusLink}\n\nDetails:\n${data.details.replace(/ · /g, '\n')}\n\n💛 Congratulations!\n\n- Noir Team`,
-                        `<h2>💛 ${recipientNameConfirm} said YES! 🎉</h2>
-                         <p><strong>📊 View her full response:</strong><br>
-                         <a href="${statusLink}" style="color:#00f0ff;">${statusLink}</a></p>
-                         <p><strong>Details:</strong><br>
-                         ${data.details.replace(/ · /g, '<br>')}</p>
-                         <p>💛 Congratulations!</p>
-                         <p>- Noir Team</p>`
-                    );
-                    console.log(`📧 Customer status email sent to: ${clientEmailConfirm}`);
-                }
-                break;
-
-            default:
-                return res.json({ success: true });
-        }
-        
-        await pool.query(updateQuery, updateParams);
-        res.json({ success: true, step, timestamp });
-    } catch (err) {
-        console.error('❌ Tracking error:', err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// ============================================================
-//  API: CUSTOMER STATUS
-// ============================================================
-app.get('/customer', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'customer.html'));
-});
-
+// Customer Status API
 app.get('/api/customer/status/:planKey', async (req, res) => {
     const planKey = req.params.planKey;
     try {
@@ -602,9 +570,7 @@ app.get('/api/customer/status/:planKey', async (req, res) => {
             WHERE plan_key = $1
         `, [planKey]);
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Plan not found' });
-        }
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Plan not found' });
 
         const plan = result.rows[0];
         res.json({
@@ -629,41 +595,16 @@ app.get('/api/customer/status/:planKey', async (req, res) => {
 });
 
 // ============================================================
-//  ROUTES
+//  HTML PAGE ROUTES
 // ============================================================
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'Admin.html'));
-});
-
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
+app.get('/customer', (req, res) => res.sendFile(path.join(__dirname, 'public', 'customer.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'Admin.html')));
+app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 // ============================================================
 //  START SERVER
 // ============================================================
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`
-╔═══════════════════════════════════════════════════════════╗
-║  🚀 NOIR DATE PLANNER - SENDGRID ✅ (SECURE!)          ║
-║                                                           ║
-║  📡 Server: http://localhost:${PORT}                      ║
-║  📊 Admin: http://localhost:${PORT}/admin               ║
-║  👤 Customer: http://localhost:${PORT}/customer?plan=KEY ║
-║  🔐 Login: http://localhost:${PORT}/login               ║
-║                                                           ║
-║  📧 Email: noir.invites@gmail.com  ✅                   ║
-║  📤 SendGrid: API key from Render Environment           ║
-║  🔒 NO API KEY IN CODE!                                 ║
-║  ⚡ Speed: Fire & Forget (NO WAITING!)                  ║
-║  🔑 Admin Key: NOIR_ADMIN_2026                           ║
-║  👤 Admin: admin@noir.com / admin123                     ║
-║                                                           ║
-║  💛 Ready!                                               ║
-╚═══════════════════════════════════════════════════════════╝
-    `);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
