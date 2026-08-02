@@ -617,31 +617,17 @@
       }
       .time-picker select option { background: #1a1122; }
 
-      .vibe-row {
+      /* ============================================================
+         MOBILE-OPTIMIZED VIBE & LOCATION CONTAINERS
+         ============================================================ */
+      .vibe-container {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
         margin-bottom: 12px;
       }
-      .vibe {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 12px;
-        padding: 8px 15px;
-        border-radius: 40px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(255, 255, 255, 0.02);
-        cursor: pointer;
-        transition: all 0.15s ease;
-        color: #ddd0d0;
-      }
-      .vibe.active {
-        background: #e8829f;
-        border-color: #e8829f;
-        color: #1a0f20;
-        font-weight: 600;
-      }
-
-      .place-selector {
+      
+      .location-container {
         background: #140e1b;
         border: 1px solid rgba(255,255,255,0.05);
         border-radius: 12px;
@@ -655,17 +641,17 @@
         min-height: 54px;
         transition: all 0.2s ease;
       }
-      .place-selector.hidden {
+      .location-container.hidden {
         opacity: 0.3;
         pointer-events: none;
       }
-      .place-selector .place-row {
+      .location-container .location-row {
         display: flex;
         align-items: center;
         gap: 12px;
         flex-wrap: wrap;
       }
-      .place-selector select {
+      .location-container select {
         background: #1e1428;
         border: 1px solid #3a2a44;
         border-radius: 30px;
@@ -678,15 +664,15 @@
         flex: 1;
         min-width: 140px;
       }
-      .place-selector select option { background: #1a1122; }
-      .place-selector .custom-place-input {
+      .location-container select option { background: #1a1122; }
+      .location-container .custom-location-input {
         display: flex;
         align-items: center;
         gap: 8px;
         flex: 2;
         min-width: 160px;
       }
-      .place-selector .custom-place-input input {
+      .location-container .custom-location-input input {
         background: #1e1428;
         border: 1px solid #3a2a44;
         border-radius: 30px;
@@ -698,11 +684,11 @@
         flex: 1;
         min-width: 120px;
       }
-      .place-selector .custom-place-input input::placeholder {
+      .location-container .custom-location-input input::placeholder {
         color: #6a5a6a;
         opacity: 0.6;
       }
-      .place-selector .custom-place-input button {
+      .location-container .custom-location-input button {
         background: #d9b25f;
         border: none;
         border-radius: 30px;
@@ -714,8 +700,71 @@
         transition: background 0.15s;
         white-space: nowrap;
       }
-      .place-selector .custom-place-input button:hover {
+      .location-container .custom-location-input button:hover {
         background: #eecf8f;
+      }
+
+      .vibe {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        padding: 8px 15px;
+        border-radius: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.02);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        color: #ddd0d0;
+        flex: 0 0 auto;
+      }
+      .vibe.active {
+        background: #e8829f;
+        border-color: #e8829f;
+        color: #1a0f20;
+        font-weight: 600;
+      }
+
+      /* Mobile-optimized containers with scroll */
+      @media (max-width: 768px) {
+        /* Restrict vibe selection area */
+        .vibe-container {
+          max-height: 260px;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          padding: 10px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          margin-bottom: 15px;
+          gap: 8px;
+        }
+
+        /* Restrict location picker */
+        .location-container {
+          max-height: 280px;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+          padding: 10px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          margin-bottom: 15px;
+        }
+
+        /* Custom subtle scrollbar styling */
+        .vibe-container::-webkit-scrollbar,
+        .location-container::-webkit-scrollbar {
+          width: 5px;
+        }
+        
+        .vibe-container::-webkit-scrollbar-thumb,
+        .location-container::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 10px;
+        }
+        
+        .vibe-container::-webkit-scrollbar-track,
+        .location-container::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 10px;
+        }
       }
 
       .cta {
@@ -916,8 +965,8 @@
         .truth-buttons { gap: 16px; flex-wrap: wrap; }
         .truth-btn { min-width: 80px; padding: 8px 20px; }
         .date-picker { flex-direction: column; align-items: stretch; gap: 8px; }
-        .place-selector .place-row { flex-direction: column; align-items: stretch; }
-        .place-selector .custom-place-input { flex-wrap: wrap; }
+        .location-container .location-row { flex-direction: column; align-items: stretch; }
+        .location-container .custom-location-input { flex-wrap: wrap; }
         .enter-btn { padding: 14px 40px; font-size: 16px; width: 100%; }
         .warning-box { font-size: 12px; padding: 12px 20px; }
         .status-grid { grid-template-columns: 1fr 1fr; }
@@ -1085,7 +1134,7 @@
             </div>
 
             <div class="section-label">// pick a vibe</div>
-            <div class="vibe-row" id="vibes">
+            <div class="vibe-container" id="vibeContainer">
               <div class="vibe" data-vibe="dinner">🍝 Dinner</div>
               <div class="vibe" data-vibe="coffee">☕ Coffee</div>
               <div class="vibe" data-vibe="walk">🌇 Walk + sunset</div>
@@ -1096,14 +1145,14 @@
               <div class="vibe" data-vibe="home">🏠 At home</div>
             </div>
 
-            <div class="place-selector" id="placeSelector">
-              <div class="place-row">
+            <div class="location-container" id="locationContainer">
+              <div class="location-row">
                 <span style="opacity:0.7;" id="placeLabel">📍 choose spot</span>
                 <select id="placeSelect">
                   <option value="">— select a vibe first —</option>
                 </select>
               </div>
-              <div class="place-row custom-place-input">
+              <div class="location-row custom-location-input">
                 <input type="text" id="customPlaceInput" placeholder="or type any place..." />
                 <button id="customPlaceBtn">➕ add</button>
               </div>
@@ -1697,25 +1746,37 @@ function updatePlaces(vibeKey) {
     placeSelect.value = '';
     chosenPlace = null;
     chosenPlaceUrl = null;
-    document.getElementById('placeSelector').classList.remove('hidden');
+    document.getElementById('locationContainer').classList.remove('hidden');
     placeLabel.textContent = `📍 ${vibeKey.charAt(0).toUpperCase() + vibeKey.slice(1)} spots`;
 }
 
+function selectVibe(vibeElement, vibeKey, vibeLabel) {
+    document.querySelectorAll('.vibe').forEach(v => v.classList.remove('active'));
+    vibeElement.classList.add('active');
+    chosenVibe = vibeKey;
+    chosenVibeLabel = vibeLabel;
+    
+    trackStep('vibe_selected', { vibe: vibeKey, label: vibeLabel });
+    updateProgress('vibe_selected', vibeLabel);
+    updatePlaces(vibeKey);
+    chosenPlace = null;
+    chosenPlaceUrl = null;
+    customInput.value = '';
+    updateCta();
+    
+    // ============================================================
+    //  SMOOTH AUTO-SCROLL TO LOCATION SECTION
+    //  ============================================================
+    const locationContainer = document.getElementById('locationContainer');
+    if (locationContainer) {
+        locationContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+// Update vibe click handler
 document.querySelectorAll('.vibe').forEach(el => {
     el.addEventListener('click', () => {
-        document.querySelectorAll('.vibe').forEach(v => v.classList.remove('active'));
-        el.classList.add('active');
-        const vibeKey = el.dataset.vibe;
-        chosenVibe = vibeKey;
-        chosenVibeLabel = el.innerText.trim();
-        
-        trackStep('vibe_selected', { vibe: vibeKey, label: el.innerText.trim() });
-        updateProgress('vibe_selected', el.innerText.trim());
-        updatePlaces(vibeKey);
-        chosenPlace = null;
-        chosenPlaceUrl = null;
-        customInput.value = '';
-        updateCta();
+        selectVibe(el, el.dataset.vibe, el.innerText.trim());
     });
 });
 
@@ -1731,6 +1792,17 @@ placeSelect.addEventListener('change', () => {
             window.open(chosenPlaceUrl, '_blank');
         }
         customInput.value = '';
+        updateCta();
+        
+        // ============================================================
+        //  SMOOTH AUTO-SCROLL TO CONFIRM BUTTON AFTER LOCATION
+        //  ============================================================
+        const ctaBtn = document.getElementById('ctaBtn');
+        if (ctaBtn) {
+            setTimeout(() => {
+                ctaBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }
     } else {
         chosenPlace = null;
         chosenPlaceUrl = null;
@@ -1749,6 +1821,16 @@ customBtn.addEventListener('click', () => {
         window.open(chosenPlaceUrl, '_blank');
         placeSelect.value = '';
         updateCta();
+        
+        // ============================================================
+        //  SMOOTH AUTO-SCROLL TO CONFIRM BUTTON AFTER CUSTOM LOCATION
+        //  ============================================================
+        const ctaBtn = document.getElementById('ctaBtn');
+        if (ctaBtn) {
+            setTimeout(() => {
+                ctaBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }
     } else {
         alert('Please type a place name.');
     }
@@ -1777,6 +1859,16 @@ yesBtn.addEventListener('click', () => {
     noBtn.style.opacity = '0.3';
     noBtn.style.pointerEvents = 'none';
     updateCta();
+    
+    // ============================================================
+    //  SMOOTH AUTO-SCROLL TO VIBE SECTION AFTER YES
+    //  ============================================================
+    const vibeContainer = document.getElementById('vibeContainer');
+    if (vibeContainer) {
+        setTimeout(() => {
+            vibeContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 500);
+    }
 });
 
 let noDodgeActive = true;
@@ -1916,7 +2008,7 @@ document.getElementById('calendarBtn').addEventListener('click', () => {
 //  INITIALIZE
 // ============================================================
 updateCta();
-document.getElementById('placeSelector').classList.add('hidden');
+document.getElementById('locationContainer').classList.add('hidden');
 
 const dashboardVisible = showDashboard();
 if (dashboardVisible) {
@@ -1947,6 +2039,7 @@ console.log('📊 View secret dashboard: add ?dashboard=secret to the URL');
 console.log('🗺️ Google Maps integration with location support!');
 console.log('🎵 Doucement.mp3 playing at 65% volume');
 console.log('💛 Auto-recipient: Viewer name becomes the recipient!');
+console.log('📱 Mobile-optimized: Scrolling containers and smooth auto-scroll!');
 </script>
 </body>
 </html>
