@@ -28,8 +28,8 @@ if (!sendgridKey) {
 //  DATABASE CONNECTION
 // ============================================================
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || 'postgresql://date_planner_db_m5jx_user:6NlxfInsdNcYYdT90TkV445yWqEKl9fz@dpg-d9ml5rtaeets73a820og-a/date_planner_db_m5jx',
-    ssl: { rejectUnauthorized: false }
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
 pool.connect((err) => {
@@ -78,7 +78,7 @@ async function createTables() {
             )
         `);
 
-        // 3. Create Tracking Log Table FIRST
+        // 3. Create Tracking Log Table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS tracking_log (
                 id SERIAL PRIMARY KEY,
@@ -92,7 +92,7 @@ async function createTables() {
             )
         `);
 
-        // 4. Create Indexes AFTER Tables Exist
+        // 4. Create Indexes
         await pool.query(`CREATE INDEX IF NOT EXISTS idx_date_plans_plan_key ON date_plans(plan_key)`);
         await pool.query(`CREATE INDEX IF NOT EXISTS idx_date_plans_user_id ON date_plans(user_id)`);
         await pool.query(`CREATE INDEX IF NOT EXISTS idx_tracking_log_plan_key ON tracking_log(plan_key)`);
@@ -151,7 +151,7 @@ async function createTables() {
                 ['You\'re the cheese to my macaroni.', 'Unknown'],
                 ['You\'re my favorite person to annoy.', 'Unknown'],
                 ['I love you more than my phone.', 'Unknown'],
-                ['How do I love thee? Let move count the ways.', 'Elizabeth Barrett Browning'],
+                ['How do I love thee? Let me count the ways.', 'Elizabeth Barrett Browning'],
                 ['I carry your heart with me (I carry it in my heart).', 'E.E. Cummings'],
                 ['She walks in beauty, like the night.', 'Lord Byron'],
                 ['Love is not love which alters when it alteration finds.', 'William Shakespeare'],
@@ -237,8 +237,8 @@ async function sendEmail(to, subject, message, htmlMessage = null) {
         const msg = {
             to: to,
             from: {
-                name: 'Noir Dates',                // Matches SendGrid Verified Sender Name
-                email: 'noir.invites@gmail.com'     // Matches SendGrid Verified Email
+                name: 'Noir Dates',
+                email: 'noir.invites@gmail.com'
             },
             subject: subject,
             text: message,
@@ -274,9 +274,15 @@ async function getClientEmail(planKey) {
 app.get('/api/quote/random', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM love_quotes ORDER BY RANDOM() LIMIT 1');
+        if (result.rows.length === 0) {
+            return res.json({
+                quote: 'Love conquers all.',
+                author: 'Unknown'
+            });
+        }
         res.json({
-            quote: result.rows[0]?.quote || 'Love conquers all.',
-            author: result.rows[0]?.author || 'Unknown'
+            quote: result.rows[0].quote,
+            author: result.rows[0].author || 'Unknown'
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -413,7 +419,7 @@ app.post('/api/track/:planKey', async (req, res) => {
                 updateParams = [viewerName, timestamp, planKey];
                 
                 sendEmail(
-                    'admin@noir.com',
+                    'noir.invites@gmail.com',
                     `📝 ${viewerName} entered their name`,
                     `Plan: ${planKey}\nName: ${viewerName}\nIP: ${ip}`
                 );
@@ -435,7 +441,7 @@ app.post('/api/track/:planKey', async (req, res) => {
                 const statusLinkYes = `${req.protocol}://${req.get('host')}/customer?plan=${planKey}`;
                 
                 sendEmail(
-                    'admin@noir.com',
+                    'noir.invites@gmail.com',
                     `💛 ${recipientNameYes} said YES!`,
                     `💛 She said YES!\n\nPlan: ${planKey}\nRecipient: ${recipientNameYes}\nTime: ${new Date().toISOString()}\nIP: ${ip}`
                 );
@@ -454,7 +460,7 @@ app.post('/api/track/:planKey', async (req, res) => {
                 updateParams = [data?.vibe || data?.label, timestamp, planKey];
                 
                 sendEmail(
-                    'admin@noir.com',
+                    'noir.invites@gmail.com',
                     `🎯 Vibe Selected: ${data?.vibe || data?.label}`,
                     `Plan: ${planKey}\nVibe: ${data?.vibe || data?.label}\nTime: ${new Date().toISOString()}`
                 );
@@ -465,7 +471,7 @@ app.post('/api/track/:planKey', async (req, res) => {
                 updateParams = [data?.place, timestamp, planKey];
                 
                 sendEmail(
-                    'admin@noir.com',
+                    'noir.invites@gmail.com',
                     `📍 Place Chosen: ${data?.place}`,
                     `Plan: ${planKey}\nPlace: ${data?.place}\nTime: ${new Date().toISOString()}`
                 );
@@ -481,7 +487,7 @@ app.post('/api/track/:planKey', async (req, res) => {
                 const statusLink = `${req.protocol}://${req.get('host')}/customer?plan=${planKey}`;
                 
                 sendEmail(
-                    'admin@noir.com',
+                    'noir.invites@gmail.com',
                     `📅 ${recipientNameConfirm} Confirmed the Date!`,
                     `📅 Date Confirmed!\n\nPlan: ${planKey}\nRecipient: ${recipientNameConfirm}\nDetails: ${data?.details}\nTime: ${new Date().toISOString()}`
                 );
