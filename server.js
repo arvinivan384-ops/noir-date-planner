@@ -92,12 +92,27 @@ async function createTables() {
             )
         `);
 
-        // 4. Create Indexes
+        // 4. CREATE PLAN VIEWS TABLE (NEW - For Multi-Visitor Tracking)
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS plan_views (
+                id SERIAL PRIMARY KEY,
+                plan_id INTEGER REFERENCES date_plans(id) ON DELETE CASCADE,
+                viewer_ip VARCHAR(100),
+                user_agent TEXT,
+                device_type VARCHAR(50),
+                is_original_recipient BOOLEAN DEFAULT FALSE,
+                viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // 5. Create Indexes
         await pool.query(`CREATE INDEX IF NOT EXISTS idx_date_plans_plan_key ON date_plans(plan_key)`);
         await pool.query(`CREATE INDEX IF NOT EXISTS idx_date_plans_user_id ON date_plans(user_id)`);
         await pool.query(`CREATE INDEX IF NOT EXISTS idx_tracking_log_plan_key ON tracking_log(plan_key)`);
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_plan_views_plan_id ON plan_views(plan_id)`);
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_plan_views_viewed_at ON plan_views(viewed_at)`);
 
-        // 5. Create Quotes Table
+        // 6. Create Quotes Table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS love_quotes (
                 id SERIAL PRIMARY KEY,
@@ -218,6 +233,7 @@ async function createTables() {
             `, ['admin@noir.com', crypto.createHash('sha256').update('admin123').digest('hex')]);
             console.log('✅ Admin account initialized');
         }
+        console.log('✅ plan_views table verified & ready!');
         console.log('✅ All database tables verified & ready');
     } catch (err) {
         console.error('❌ Table creation error:', err);
@@ -285,6 +301,157 @@ app.get('/api/quote/random', async (req, res) => {
             author: result.rows[0].author || 'Unknown'
         });
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================================
+//  NEW: TRACK EACH VISIT WHEN A PLAN IS OPENED
+//  ============================================================
+app.get('/api/plan/:planKey', async (req, res) => {
+    const planKey = req.params.planKey;
+
+    // Capture IP (works on Render)
+    const viewerIp = req.headers['x-forwarded-for'] 
+        ? req.headers['x-forwarded-for'].split(',')[0].trim() 
+        : req.socket.remoteAddress;
+
+    const userAgent = req.headers['user-agent'] || '';
+
+    // Device classification
+    let deviceType = 'Desktop';
+    if (/mobile/i.test(userAgent)) deviceType = 'Mobile';
+    if (/tablet|ipad/i.test(userAgent)) deviceType = 'Tablet';
+
+    // Flag if ?ref=recipient is present in the URL
+    const isOriginal = req.query.ref === 'recipient';
+
+    try {
+        // Fetch plan
+        const planResult = await pool.query('SELECT id, * FROM date_plans WHERE plan_key = $1', [planKey]);
+        if (planResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Plan not found' });
+        }
+
+        const plan = planResult.rows[0];
+
+        // Record the view hit
+        await pool.query(
+            `INSERT INTO plan_views (plan_id, viewer_ip, user_agent, device_type, is_original_recipient)
+             VALUES ($1, $2, $3, $4, $5)`,
+            [plan.id, viewerIp, userAgent, deviceType, isOriginal]
+        );
+
+        // Also update page_viewed in date_plans if not already viewed
+        if (!plan.page_viewed) {
+            await pool.query(
+                'UPDATE date_plans SET page_viewed = TRUE, viewed_at = NOW() WHERE id = $1',
+                [plan.id]
+            );
+        }
+
+        res.json({
+            success: true,
+            plan: {
+                recipient_name: plan.recipient_name,
+                page_viewed: true,
+                viewer_ip: viewerIp,
+                device_type: deviceType
+            }
+        });
+    } catch (err) {
+        console.error('Error tracking view:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// ============================================================
+//  NEW: GET ANALYTICS FOR ADMIN DASHBOARD
+//  ============================================================
+app.get('/api/admin/plan-views/:planKey', async (req, res) => {
+    const { planKey } = req.params;
+
+    try {
+        // First get the plan ID
+        const planResult = await pool.query('SELECT id FROM date_plans WHERE plan_key = $1', [planKey]);
+        if (planResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Plan not found' });
+        }
+
+        const planId = planResult.rows[0].id;
+
+        // Get all views
+        const viewsResult = await pool.query(
+            `SELECT id, viewer_ip, device_type, is_original_recipient, viewed_at 
+             FROM plan_views 
+             WHERE plan_id = $1 
+             ORDER BY viewed_at DESC`,
+            [planId]
+        );
+
+        // Get summary statistics
+        const summaryResult = await pool.query(
+            `SELECT 
+                COUNT(*) AS total_views, 
+                COUNT(DISTINCT viewer_ip) AS unique_visitors,
+                COUNT(CASE WHEN device_type = 'Mobile' THEN 1 END) AS mobile_views,
+                COUNT(CASE WHEN device_type = 'Desktop' THEN 1 END) AS desktop_views,
+                COUNT(CASE WHEN device_type = 'Tablet' THEN 1 END) AS tablet_views,
+                COUNT(CASE WHEN is_original_recipient = true THEN 1 END) AS original_recipient_views,
+                COUNT(CASE WHEN is_original_recipient = false THEN 1 END) AS shared_views
+             FROM plan_views 
+             WHERE plan_id = $1`,
+            [planId]
+        );
+
+        // Get recent views with more detail
+        const recentViews = await pool.query(
+            `SELECT viewer_ip, device_type, is_original_recipient, viewed_at 
+             FROM plan_views 
+             WHERE plan_id = $1 
+             ORDER BY viewed_at DESC 
+             LIMIT 20`,
+            [planId]
+        );
+
+        res.json({
+            summary: summaryResult.rows[0],
+            views: viewsResult.rows,
+            recent_views: recentViews.rows,
+            plan_key: planKey
+        });
+    } catch (err) {
+        console.error('Error getting analytics:', err);
+        res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+});
+
+// ============================================================
+//  NEW: GET ALL PLANS VIEW STATS (Admin Overview)
+//  ============================================================
+app.get('/api/admin/all-views-summary', async (req, res) => {
+    const adminKey = req.headers['x-admin-key'];
+    if (adminKey !== 'NOIR_ADMIN_2026') return res.status(401).json({ error: 'Unauthorized' });
+
+    try {
+        const result = await pool.query(`
+            SELECT 
+                dp.plan_key,
+                dp.recipient_name,
+                COUNT(pv.id) AS total_views,
+                COUNT(DISTINCT pv.viewer_ip) AS unique_visitors,
+                MAX(pv.viewed_at) AS last_viewed_at,
+                dp.yes_clicked,
+                dp.date_confirmed
+            FROM date_plans dp
+            LEFT JOIN plan_views pv ON dp.id = pv.plan_id
+            GROUP BY dp.id, dp.plan_key, dp.recipient_name, dp.yes_clicked, dp.date_confirmed
+            ORDER BY last_viewed_at DESC NULLS LAST
+        `);
+
+        res.json({ plans: result.rows });
+    } catch (err) {
+        console.error('Error getting all views summary:', err);
         res.status(500).json({ error: err.message });
     }
 });
