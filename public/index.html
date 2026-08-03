@@ -1395,40 +1395,121 @@ async function trackStep(step, data = {}) {
 }
 
 // ============================================================
-//  DOUCEMENT MUSIC (65% volume)
+//  ULTRA-RELIABLE MUSIC WITH SCREEN SLEEP DETECTION
+//  (Pauses when screen locks, even on mobile)
 // ============================================================
 let musicPlaying = false;
 let audioPlayer;
+let audioContext = null;
+let musicSource = null;
 const soundBtn = document.getElementById('soundBtn');
 
 const AUDIO_URL = 'doucement.mp3';
 const MUSIC_VOLUME = 0.65;
 
+// Track screen state
+let screenAwake = true;
+let checkInterval = null;
+
+// ===== Create AudioContext for better control =====
+function createAudioContext() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioContext.state === 'suspended') {
+            audioContext.resume().catch(console.warn);
+        }
+    }
+    return audioContext;
+}
+
+// ===== Load and play audio through AudioContext =====
+async function loadAudioWithContext() {
+    try {
+        const response = await fetch(AUDIO_URL);
+        if (!response.ok) throw new Error('File not found');
+        const arrayBuffer = await response.arrayBuffer();
+        const ctx = createAudioContext();
+        const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+        return audioBuffer;
+    } catch (error) {
+        console.warn('Failed to load via AudioContext, falling back to HTML5 Audio:', error);
+        return null;
+    }
+}
+
+// ===== Start music =====
 async function startMusic() {
     if (musicPlaying) return;
 
     try {
+        // Try AudioContext first (more reliable for sleep detection)
+        const audioBuffer = await loadAudioWithContext();
+        
+        if (audioBuffer) {
+            // Use Web Audio API
+            const ctx = createAudioContext();
+            if (ctx.state === 'suspended') await ctx.resume();
+            
+            musicSource = ctx.createBufferSource();
+            musicSource.buffer = audioBuffer;
+            musicSource.loop = true;
+            
+            const gainNode = ctx.createGain();
+            gainNode.gain.value = MUSIC_VOLUME;
+            musicSource.connect(gainNode);
+            gainNode.connect(ctx.destination);
+            
+            musicSource.start(0);
+            
+            // Store source for stopping
+            audioPlayer = null;
+            musicPlaying = true;
+            soundBtn.textContent = '🎵 Marioo · Doucement';
+            soundBtn.setAttribute('aria-pressed', 'true');
+            soundBtn.classList.add('playing');
+            
+            console.log('🎵 Music playing via Web Audio (reliable sleep detection)');
+            return;
+        }
+        
+        // Fallback to HTML5 Audio
         if (!audioPlayer) {
             audioPlayer = new Audio(AUDIO_URL);
             audioPlayer.loop = true;
             audioPlayer.preload = 'auto';
             audioPlayer.volume = MUSIC_VOLUME;
         }
-
+        
+        // Only play if screen is awake
+        if (!screenAwake) {
+            console.log('⏸️ Screen is asleep - waiting to play');
+            return;
+        }
+        
         await audioPlayer.play();
         musicPlaying = true;
         soundBtn.textContent = '🎵 Marioo · Doucement';
         soundBtn.setAttribute('aria-pressed', 'true');
         soundBtn.classList.add('playing');
-
-        console.log('Doucement.mp3 playing at 65% volume');
+        
+        console.log('🎵 Music playing via HTML5 Audio');
     } catch (error) {
-        console.warn('Could not play Doucement.mp3:', error);
+        console.warn('Could not play music:', error);
         soundBtn.textContent = '♪ play music';
     }
 }
 
+// ===== Stop music =====
 function stopMusic() {
+    // Stop Web Audio source
+    if (musicSource) {
+        try { musicSource.stop(); } catch(e) {}
+        musicSource = null;
+    }
+    if (audioContext) {
+        audioContext.suspend().catch(console.warn);
+    }
+    // Stop HTML5 audio
     if (audioPlayer) {
         audioPlayer.pause();
         audioPlayer.currentTime = 0;
@@ -1439,9 +1520,145 @@ function stopMusic() {
     soundBtn.classList.remove('playing');
 }
 
+// ============================================================
+//  ULTRA-RELIABLE SCREEN SLEEP DETECTION
+//  (Pauses even when screen locks)
+// ============================================================
+
+// 1. Visibility change (tab switch)
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        screenAwake = false;
+        pauseMusic();
+        console.log('⏸️ Music paused - visibility hidden');
+    } else {
+        screenAwake = true;
+        resumeMusic();
+        console.log('▶️ Music resumed - visibility visible');
+    }
+});
+
+// 2. Page hide (mobile sleep)
+document.addEventListener('pagehide', () => {
+    pauseMusic();
+    console.log('⏸️ Music paused - pagehide');
+});
+
+// 3. Page show (wake up)
+document.addEventListener('pageshow', () => {
+    if (!document.hidden) {
+        screenAwake = true;
+        resumeMusic();
+        console.log('▶️ Music resumed - pageshow');
+    }
+});
+
+// 4. Freeze / Resume (modern browsers)
+document.addEventListener('freeze', () => {
+    pauseMusic();
+    console.log('⏸️ Music paused - freeze');
+});
+
+document.addEventListener('resume', () => {
+    if (!document.hidden) {
+        screenAwake = true;
+        resumeMusic();
+        console.log('▶️ Music resumed - resume');
+    }
+});
+
+// 5. Window blur/focus
+window.addEventListener('blur', () => {
+    pauseMusic();
+    console.log('⏸️ Music paused - window blur');
+});
+
+window.addEventListener('focus', () => {
+    if (!document.hidden) {
+        screenAwake = true;
+        resumeMusic();
+        console.log('▶️ Music resumed - window focus');
+    }
+});
+
+// 6. Beforeunload (tab close)
+window.addEventListener('beforeunload', () => {
+    stopMusic();
+    console.log('⏸️ Music stopped - beforeunload');
+});
+
+// 7. AGGRESSIVE CHECK: Poll every 500ms to ensure music is paused when hidden
+function startAggressiveCheck() {
+    if (checkInterval) clearInterval(checkInterval);
+    checkInterval = setInterval(() => {
+        if (document.hidden) {
+            if (musicPlaying) {
+                pauseMusic();
+                console.log('⏸️ Music paused by aggressive check (hidden)');
+            }
+        } else {
+            // If music is supposed to be playing but isn't, resume
+            if (musicPlaying && !isMusicActuallyPlaying()) {
+                resumeMusic();
+                console.log('▶️ Music resumed by aggressive check (visible)');
+            }
+        }
+    }, 500); // Check every half second
+}
+
+// Helper to check if audio is actually playing
+function isMusicActuallyPlaying() {
+    if (musicSource) {
+        // Web Audio: check if context is running
+        return audioContext && audioContext.state === 'running';
+    }
+    if (audioPlayer) {
+        return !audioPlayer.paused && audioPlayer.currentTime > 0;
+    }
+    return false;
+}
+
+function pauseMusic() {
+    if (musicSource) {
+        // Pause Web Audio by suspending context
+        if (audioContext && audioContext.state === 'running') {
+            audioContext.suspend().catch(console.warn);
+        }
+    }
+    if (audioPlayer && !audioPlayer.paused) {
+        audioPlayer.pause();
+    }
+}
+
+function resumeMusic() {
+    if (musicSource) {
+        // Resume Web Audio
+        if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume().catch(console.warn);
+        }
+    }
+    if (audioPlayer && audioPlayer.paused && musicPlaying) {
+        audioPlayer.play().catch(console.warn);
+    }
+}
+
+// Start the aggressive check when the page loads
+window.addEventListener('load', () => {
+    startAggressiveCheck();
+    // Preload audio
+    if (!audioPlayer && !musicSource) {
+        // Just preload the file
+        fetch(AUDIO_URL).then(response => response.arrayBuffer()).catch(() => {});
+    }
+});
+
+// Toggle button
 soundBtn.addEventListener('click', () => {
-    if (musicPlaying) stopMusic();
-    else startMusic();
+    if (musicPlaying) {
+        stopMusic();
+    } else {
+        startMusic();
+    }
 });
 
 // ============================================================
@@ -2037,7 +2254,7 @@ document.addEventListener('visibilitychange', () => {
 console.log('💛 Date invitation loaded with real-time tracking!');
 console.log('📊 View secret dashboard: add ?dashboard=secret to the URL');
 console.log('🗺️ Google Maps integration with location support!');
-console.log('🎵 Doucement.mp3 playing at 65% volume');
+console.log('🎵 Music will pause when screen sleeps (ultra-reliable detection)!');
 console.log('💛 Auto-recipient: Viewer name becomes the recipient!');
 console.log('📱 Mobile-optimized: Scrolling containers and smooth auto-scroll!');
 </script>
